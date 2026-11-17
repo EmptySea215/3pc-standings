@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="light" />
 <meta name="description" content="3 Putt Cup: standings and results for the private fantasy golf league." />
+<!-- Link preview (texts, Slack, WhatsApp...). These need ABSOLUTE urls: if the site ever moves to a
+     custom domain, change the two emptysea215.github.io addresses below. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="3 Putt Cup" />
+<meta property="og:title" content="3 Putt Cup" />
+<meta property="og:description" content="Standings, live scoring and schedule for the 3 Putt Cup fantasy golf league." />
+<meta property="og:url" content="https://emptysea215.github.io/3pc-standings/" />
+<meta property="og:image" content="https://emptysea215.github.io/3pc-standings/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="3 Putt Cup logo: a flag planted in the cup" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -921,6 +933,86 @@
 
   @media (prefers-reduced-motion: reduce) { .a2hs { transition: none; } }
 
+  /* ---------- What do I need? ---------- */
+
+  .need-wrap { max-width: 760px; }
+  .need-pick { padding: 12px 16px; }
+
+  .need-pick select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+  }
+
+  .need-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .need-summary > div { background: var(--surface); padding: 12px 14px; }
+
+  .need-summary .k {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .need-summary .v { margin-top: 3px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+
+  .need-card { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .need-card:last-child { border-bottom: none; }
+
+  .need-card h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .need-card p { margin: 7px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-dim); }
+  .need-card p b { color: var(--ink); font-weight: 600; }
+  .need-card .fine { font-size: 12.5px; color: var(--ink-faint); }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 100px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface-2);
+    color: var(--ink-dim);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .pill.good { color: var(--good); border-color: rgba(31, 122, 77, 0.35); background: rgba(31, 122, 77, 0.08); }
+  .pill.warn { color: var(--gold); border-color: rgba(154, 106, 8, 0.35); background: rgba(154, 106, 8, 0.09); }
+  .pill.bad { color: var(--bad); border-color: rgba(192, 57, 43, 0.35); background: rgba(192, 57, 43, 0.07); }
+  .pill.info { color: var(--accent); border-color: rgba(29, 78, 216, 0.3); background: var(--accent-soft); }
+
+  .table-scroll { overflow-x: auto; }
+
+  @media (max-width: 479px) {
+    .hide-sm { display: none; }
+    .need-summary { grid-template-columns: repeat(2, 1fr); }
+    .mini th, .mini td { padding: 7px 8px; }
+    .mini th:first-child, .mini td:first-child { padding-left: 12px; }
+    .mini th:last-child, .mini td:last-child { padding-right: 12px; }
+    .table-scroll .tag { padding: 2px 7px; font-size: 11px; }
+  }
+
   body.sheet-open { overflow: hidden; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -956,7 +1048,8 @@
     <nav class="nav" aria-label="Sections">
       <a href="#/" data-nav="standings">Standings</a>
       <a href="#/week" data-nav="week">This week</a>
-      <a href="#/schedule" data-nav="schedule">Schedule &amp; rules</a>
+      <a href="#/schedule" data-nav="schedule">Schedule<span class="hide-sm"> &amp; rules</span></a>
+      <a href="#/need" data-nav="need">What I need</a>
     </nav>
     <span class="season-pill"><span class="dot"></span>2026 season &middot; Final</span>
   </div>
@@ -1114,6 +1207,22 @@
   </div>
 </div><!-- /schedule view -->
 
+<div data-view="need" hidden>
+  <div class="page-head">
+    <h1>What do I need?</h1>
+    <p>Pick a player to see how far they are from the top 10 or the podium, and how many points are still on the table.</p>
+  </div>
+  <div class="need-wrap">
+    <div class="panel">
+      <div class="panel-head"><h2>Player</h2></div>
+      <div class="need-pick">
+        <select id="needPick" aria-label="Choose a player"></select>
+      </div>
+    </div>
+    <div id="needBody" style="margin-top:16px"></div>
+  </div>
+</div><!-- /need view -->
+
   <footer>
     <span class="footer-mark">3 PUTT CUP</span>
     <span>2027 opens with the Waste Management Phoenix Open &middot; Feb 11</span>
@@ -1174,6 +1283,122 @@
   const SCHEDULE = [{"key": "wm", "name": "Waste Management Phoenix Open", "date": "2027-02-11", "segment": 1, "point_type": "600", "is_major": null, "note": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2027-02-18", "segment": 1, "point_type": "650", "is_major": null, "note": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2027-02-25", "segment": 1, "point_type": "600", "is_major": null, "note": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2027-03-04", "segment": 1, "point_type": "650", "is_major": null, "note": null}, {"key": "players", "name": "The Players Championship", "date": "2027-03-11", "segment": 1, "point_type": "700", "is_major": true, "note": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2027-03-18", "segment": 1, "point_type": "650", "is_major": null, "note": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2027-03-25", "segment": 1, "point_type": "600", "is_major": null, "note": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2027-04-01", "segment": 1, "point_type": "600", "is_major": null, "note": null}, {"key": "masters", "name": "Masters", "date": "2027-04-08", "segment": 2, "point_type": "700", "is_major": true, "note": null}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2027-04-15", "segment": 2, "point_type": "650", "is_major": null, "note": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2027-04-22", "segment": 2, "point_type": "600", "is_major": null, "note": "Team event; uses the 600pt table, same as 2026."}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2027-04-29", "segment": 2, "point_type": "600", "is_major": null, "note": null}, {"key": "valspar", "name": "Valspar Championship", "date": "2027-05-06", "segment": 2, "point_type": "600", "is_major": null, "note": null}, {"key": "truist", "name": "Truist Championship", "date": "2027-05-13", "segment": 2, "point_type": "650", "is_major": null, "note": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2027-05-20", "segment": 2, "point_type": "700", "is_major": true, "note": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2027-05-27", "segment": 2, "point_type": "600", "is_major": null, "note": null}, {"key": "memorial", "name": "The Memorial", "date": "2027-06-03", "segment": 2, "point_type": "650", "is_major": null, "note": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2027-06-10", "segment": 3, "point_type": "600", "is_major": null, "note": null}, {"key": "us_open", "name": "US Open (Pebble Beach)", "date": "2027-06-18", "segment": 3, "point_type": "700", "is_major": true, "note": null}, {"key": "travelers", "name": "Travelers Championship", "date": "2027-06-24", "segment": 3, "point_type": "650", "is_major": null, "note": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2027-07-01", "segment": 3, "point_type": "600", "is_major": null, "note": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2027-07-08", "segment": 3, "point_type": "600", "is_major": null, "note": null}, {"key": "open_championship", "name": "Open Championship (St Andrews)", "date": "2027-07-15", "segment": 3, "point_type": "700", "is_major": true, "note": null}, {"key": "3m", "name": "3M Open", "date": "2027-07-22", "segment": 3, "point_type": "600", "is_major": null, "note": null}, {"key": "sompo", "name": "Sompo Championship", "date": "2027-07-29", "segment": 3, "point_type": "600", "is_major": null, "note": "New event for 2027, replaces the old Rocket Classic slot"}, {"key": "wyndham", "name": "GO by Raymond James", "date": "2027-08-05", "segment": 3, "point_type": "600", "is_major": null, "note": "Formerly Wyndham Championship - same Sedgefield CC venue, new title sponsor"}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2027-08-12", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null, "note": null}, {"key": "bmw", "name": "BMW Championship", "date": "2027-08-19", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null, "note": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2027-08-26", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null, "note": null}];
   const PAYOUTS = {"_comment": "PLACEHOLDER: 2026 values, seeded from the 2026 workbook's Payouts sheet (read 2026-11-17). Michael will replace with the real 2027 payouts before the season. The Schedule & rules page shows a 'Preliminary' notice until web/template.html's #prelimNotice block is deleted.", "season": 2027, "weekly": {"600": [50, 30, 15], "650": [55, 25, 20], "700": [75, 50, 30]}, "playoff_each": [100, 55, 40, 30, 20], "segment_winner": 500, "majors_plus_players_winner": 500, "highest_scoring_player_season": 300, "season_final": [1750, 1000, 510]};
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
+
+  const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
+
+  /*NEED-CALC-START*/
+  // ---------- "What do I need?" math (pure functions; unit-tested in Node) ----------
+  const DAY_MS = 864e5;
+
+  // Excel RANK() semantics, same as engine/scoring.py: highest = 1, ties share the lowest rank.
+  function excelRank(values) {
+    const order = values.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
+    const ranks = new Array(values.length);
+    order.forEach(([v, i], k) => { ranks[i] = k > 0 && v === order[k - 1][0] ? ranks[order[k - 1][1]] : k + 1; });
+    return ranks;
+  }
+
+  function endOfEvent(ev) { return ev.date ? new Date(ev.date + "T00:00:00").getTime() + 4 * DAY_MS : null; }
+
+  // Recomputes every entry's totals and ranks from per-event points. `opts.asOf` (an event key)
+  // rewinds the season to just after that event, for testing; otherwise it is the live state.
+  function buildNeed(standings, schedule, tables, opts) {
+    opts = opts || {};
+    const keys = schedule.map((e) => e.key);
+    let cutoff = keys.length - 1;
+    if (opts.asOf && keys.indexOf(opts.asOf) >= 0) cutoff = keys.indexOf(opts.asOf);
+    const asOfEnd = opts.asOf ? endOfEvent(schedule[cutoff]) : null;
+    const ref = asOfEnd != null ? asOfEnd : (opts.now != null ? opts.now : Date.now());
+    const byKey = standings.map((p) => { const m = {}; p.events.forEach((e) => { m[e.key] = e; }); return m; });
+
+    // An event has "occurred" if someone played it, or its week is over. (The date test covers a
+    // week nobody in the league played, which must not count as still to come.)
+    const occurred = schedule.map((ev, i) => {
+      if (i > cutoff) return false;
+      const played = standings.some((p, j) => byKey[j][ev.key] && byKey[j][ev.key].played);
+      const end = endOfEvent(ev);
+      return played || (end != null && end < ref);
+    });
+
+    const metrics = {
+      overall: () => true,
+      majors: (ev) => !!ev.is_major,
+      seg1: (ev) => ev.segment === 1,
+      seg2: (ev) => ev.segment === 2,
+      seg3: (ev) => ev.segment === 3,
+    };
+    const rows = standings.map((p, j) => {
+      const r = { name: p.name, handle: p.dk_handle };
+      Object.keys(metrics).forEach((m) => {
+        r[m] = schedule.reduce((s, ev, i) => s + (occurred[i] && metrics[m](ev) ? ((byKey[j][ev.key] || {}).points || 0) : 0), 0);
+      });
+      r.played = schedule.reduce((n, ev, i) => n + (occurred[i] && byKey[j][ev.key] && byKey[j][ev.key].played ? 1 : 0), 0);
+      return r;
+    });
+    Object.keys(metrics).forEach((m) => {
+      const ranks = excelRank(rows.map((r) => r[m]));
+      rows.forEach((r, i) => { r["rank_" + m] = ranks[i]; });
+    });
+
+    const remaining = schedule.filter((ev, i) => !occurred[i]);
+    const best = (ev) => (tables[ev.point_type] && tables[ev.point_type][1]) || 0; // 1st-place points
+    const remMax = {}, remCount = {}, playedCount = {};
+    Object.keys(metrics).forEach((m) => {
+      const rem = remaining.filter(metrics[m]);
+      remCount[m] = rem.length;
+      remMax[m] = rem.reduce((s, ev) => s + best(ev), 0);
+      // events in this race that really happened (a week nobody played doesn't dilute anyone's average)
+      playedCount[m] = schedule.filter((ev, i) => occurred[i] && metrics[m](ev) &&
+        standings.some((p, j) => byKey[j][ev.key] && byKey[j][ev.key].played)).length;
+    });
+    return { rows, remaining, remMax, remCount, playedCount, eventsPlayed: occurred.filter(Boolean).length, totalEvents: schedule.length };
+  }
+
+  // Where one entry stands against a target finish (top N) in one race.
+  //   clinched:   even if every rival maxed out every remaining event, fewer than N could end above
+  //               (deliberately conservative: it never claims a clinch that isn't certain)
+  //   eliminated: even maxing every remaining event, at least N rivals are already ahead of that total
+  function analyze(need, metric, me, N) {
+    const rows = need.rows;
+    const remMax = need.remMax[metric], remCount = need.remCount[metric];
+    const sorted = rows.slice().sort((a, b) => b[metric] - a[metric] || a.name.localeCompare(b.name));
+    const myPts = me[metric], rank = me["rank_" + metric];
+    const others = rows.filter((r) => r !== me);
+    const res = { metric, N, rank, myPts, remMax, remCount, final: remCount === 0 };
+    res.couldFinishAhead = others.filter((r) => r[metric] + remMax > myPts).length;
+    res.clinched = res.couldFinishAhead + 1 <= N;
+    res.definitelyAhead = others.filter((r) => r[metric] > myPts + remMax).length;
+    res.eliminated = res.definitelyAhead >= N;
+    res.inside = rank <= N;
+    if (res.inside) {
+      res.outsider = sorted[N] || null;
+      res.cushion = res.outsider ? myPts - res.outsider[metric] : null;
+    } else {
+      res.holder = sorted[N - 1];
+      res.gap = res.holder[metric] - myPts;
+      res.perEvent = remCount > 0 ? res.gap / remCount : null;
+    }
+    // Pace: what the race looks like in points per event. paceNeeded is the average this entry must score
+    // from here to finish level with the current holder IF the holder keeps their season average.
+    const played = (need.playedCount || {})[metric] || 0;
+    res.playedCount = played;
+    res.notStarted = played === 0;
+    if (played > 0) {
+      res.myPace = myPts / played;
+      if (!res.inside && remCount > 0) {
+        res.holderPace = res.holder[metric] / played;
+        res.paceNeeded = (res.holder[metric] + res.holderPace * remCount - myPts) / remCount;
+        const ratio = res.myPace > 0 ? res.paceNeeded / res.myPace : Infinity;
+        res.ratio = ratio;
+        res.tier = ratio <= 1.35 ? "within" : ratio <= 2 ? "stretch" : "long";
+      }
+    }
+    const above = sorted.filter((r) => r[metric] > myPts);
+    res.next = above.length ? above[above.length - 1] : null;
+    res.nextGap = res.next ? res.next[metric] - myPts : null;
+    return res;
+  }
+  /*NEED-CALC-END*/
 
   // Minimal HTML escaper for anything that comes from a data file at runtime.
   function esc(s) {
@@ -1581,7 +1806,7 @@
 
   // ======================= Router, This week (live), Schedule & rules =======================
   (function () {
-    const VIEWS = ["standings", "week", "schedule"];
+    const VIEWS = ["standings", "week", "schedule", "need"];
     const DAY = 864e5;
     const byHandle = new Map(STANDINGS.map((p) => [p.dk_handle.toLowerCase(), p]));
 
@@ -1615,8 +1840,9 @@
 
     function route() {
       const parts = location.hash.replace(/^#\/?/, "").split("/");
-      const view = parts[0] === "week" ? "week" : parts[0] === "schedule" ? "schedule" : "standings";
+      const view = parts[0] === "week" ? "week" : parts[0] === "schedule" ? "schedule" : parts[0] === "need" ? "need" : "standings";
       showView(view);
+      if (view === "need") showNeed(parts[1] ? decodeURIComponent(parts[1]) : null);
       if (parts[0] === "player" && parts[1]) {
         const p = byHandle.get(decodeURIComponent(parts[1]).toLowerCase());
         if (p) window.openSheet(p);
@@ -1819,6 +2045,154 @@
         '<details class="fold"><summary>Playoff events</summary>' + po + "</details>";
     }
 
+    // ---------- What do I need? ----------
+    // ?asof=<event key> rewinds the standings to just after that event (for testing the tool mid-season).
+    const asOfKey = new URLSearchParams(location.search).get("asof");
+    const NEED = buildNeed(STANDINGS, SEASON_SCHEDULE, POINT_TABLES, { asOf: asOfKey });
+    const NEED_KEY = "3pc_need_player";
+
+    function ord(n) {
+      const s = ["th", "st", "nd", "rd"], v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    const num = (x) => Number(x).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const one = (x) => String(Math.round(x * 10) / 10);
+
+    function targetCard(title, a, me, note) {
+      const who = esc(me.name), p = fmtPts;
+      let pill, text;
+      if (a.notStarted && !a.final) {
+        pill = '<span class="pill">Not started</span>';
+        text = "This race hasn&rsquo;t started yet: everyone is at 0. " + a.remCount + " event" + (a.remCount === 1 ? "" : "s") +
+          " to go, worth up to " + num(a.remMax) + " pts.";
+      } else if (a.final) {
+        pill = a.inside ? '<span class="pill good">Achieved</span>' : '<span class="pill">Final</span>';
+        text = a.inside
+          ? "<b>" + who + "</b> finished <b>" + ord(a.rank) + "</b> with " + p(a.myPts) + " pts."
+          : "<b>" + who + "</b> finished <b>" + ord(a.rank) + "</b> with " + p(a.myPts) + " pts, " + p(a.gap) + " behind " + esc(a.holder.name) + " in " + ord(a.N) + ".";
+      } else if (a.clinched) {
+        pill = '<span class="pill good">Clinched</span>';
+        text = "<b>" + who + "</b> is <b>" + ord(a.rank) + "</b> with " + p(a.myPts) + " pts and can&rsquo;t be caught: " +
+          (a.couldFinishAhead === 0 ? "no one can still finish ahead, even with perfect weeks."
+            : "even if every rival had perfect weeks, at most " + a.couldFinishAhead + " could still finish ahead.");
+      } else if (a.eliminated) {
+        pill = '<span class="pill bad">Out of reach</span>';
+        text = "Even with every point still available (up to " + num(a.remMax) + " pts over " + a.remCount + " event" + (a.remCount === 1 ? "" : "s") +
+          "), <b>" + who + "</b> (" + p(a.myPts) + " pts) would still trail " + a.definitelyAhead + " player" + (a.definitelyAhead === 1 ? "" : "s") + " who are already ahead of that total.";
+      } else if (a.inside) {
+        pill = '<span class="pill info">In position</span>';
+        text = "<b>" + who + "</b> is <b>" + ord(a.rank) + "</b> with " + p(a.myPts) + " pts" +
+          (a.outsider ? ", " + p(a.cushion) + " ahead of " + esc(a.outsider.name) + " in " + ord(a.N + 1) : "") +
+          ". " + a.remCount + " event" + (a.remCount === 1 ? "" : "s") + " left, worth up to " + num(a.remMax) + " pts, so this can still change.";
+      } else {
+        pill = a.tier === "within" ? '<span class="pill good">Within reach</span>'
+          : a.tier === "stretch" ? '<span class="pill warn">Stretch</span>'
+          : a.tier === "long" ? '<span class="pill">Long shot</span>'
+          : '<span class="pill warn">In reach</span>';
+        const evs = a.remCount + " event" + (a.remCount === 1 ? "" : "s");
+        text = "<b>" + who + "</b> is <b>" + ord(a.rank) + "</b> with " + p(a.myPts) + " pts" +
+          (a.myPace != null ? " (averaging " + one(a.myPace) + " per event)" : "") + ". " + esc(a.holder.name) + " holds " + ord(a.N) +
+          " at " + p(a.holder[a.metric]) + ", " + p(a.gap) + " ahead" +
+          (a.holderPace != null ? " and averaging " + one(a.holderPace) : "") + ". With " + evs + " left (up to " + num(a.remMax) + " pts), ";
+        text += a.paceNeeded != null
+          ? "<b>" + who + "</b> would need about <b>" + one(a.paceNeeded) + " pts per event</b> if " + esc(a.holder.name) + " keeps that pace" +
+            (isFinite(a.ratio) ? " &mdash; " + one(a.ratio) + "&times; their average so far." : ".")
+          : "that&rsquo;s an edge of about <b>" + one(a.perEvent) + " pts per event</b> over " + esc(a.holder.name) + ".";
+      }
+      return '<div class="need-card"><h3>' + esc(title) + " " + pill + "</h3><p>" + text + "</p>" +
+        (note ? '<p class="fine">' + note + "</p>" : "") + "</div>";
+    }
+
+    function renderNeed(handle) {
+      const body = document.getElementById("needBody");
+      const me = handle ? NEED.rows.find((r) => r.handle.toLowerCase() === handle.toLowerCase()) : null;
+      if (!me) { body.innerHTML = '<div class="empty">Choose a player above to see what they need.</div>'; return; }
+
+      const a10 = analyze(NEED, "overall", me, 10);
+      const a3 = analyze(NEED, "overall", me, 3);
+      const a1 = analyze(NEED, "overall", me, 1);
+      const done = NEED.remaining.length === 0;
+      let html = "";
+
+      if (asOfKey) {
+        const ev = SEASON_SCHEDULE.find((e) => e.key === asOfKey);
+        if (ev) html += '<div class="notice warn"><b>Preview:</b> standings rewound to just after ' + esc(ev.name) + ".</div>";
+      }
+      if (done) html += '<div class="notice"><b>The season is complete.</b> These are the final results.</div>';
+
+      html += '<div class="panel"><div class="need-summary">' +
+        '<div><div class="k">Overall rank</div><div class="v">' + ord(me.rank_overall) + "</div></div>" +
+        '<div><div class="k">Points</div><div class="v">' + fmtPts(me.overall) + "</div></div>" +
+        '<div><div class="k">Events left</div><div class="v">' + NEED.remaining.length + "</div></div>" +
+        '<div><div class="k">Max still available</div><div class="v">' + num(NEED.remMax.overall) + "</div></div></div>";
+      if (a1.next) {
+        html += '<div class="prose" style="border-top:1px solid var(--line)">Next place up: <b>' + esc(a1.next.name) + "</b> (" + fmtPts(a1.next.overall) +
+          " pts), " + fmtPts(a1.nextGap) + " ahead.</div>";
+      }
+      html += "</div>";
+
+      // ---- targets ----
+      html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Targets</h2><span class="panel-sub">Overall race</span></div>';
+      html += targetCard("Top 10", a10, me);
+      html += targetCard("Top 3 (season prizes)", a3, me);
+      if (a1.inside || !a1.eliminated) html += targetCard("Win the season", a1, me);
+      html += "</div>";
+
+      // ---- majors + the segment currently being played ----
+      const races = [];
+      if (SEASON_SCHEDULE.some((e) => e.is_major)) races.push(["Majors + Players", "majors"]);
+      const seg = ["seg1", "seg2", "seg3"].find((k) => NEED.remCount[k] > 0);
+      if (seg) races.push(["Segment " + seg.slice(3), seg]);
+      if (races.length) {
+        html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Other races</h2><span class="panel-sub">Win the category</span></div>';
+        races.forEach(([title, key]) => {
+          const a = analyze(NEED, key, me, 1);
+          const where = NEED.remCount[key] > 0 && !a.notStarted ? NEED.remCount[key] + " event" + (NEED.remCount[key] === 1 ? "" : "s") + " left in this race." : "";
+          html += targetCard(title, a, me, where);
+        });
+        html += "</div>";
+      }
+
+      // ---- what the remaining events are worth ----
+      if (NEED.remaining.length) {
+        const T = POINT_TABLES, at = (ev, n) => (T[ev.point_type] && T[ev.point_type][n] != null ? T[ev.point_type][n] : "&ndash;");
+        let rows = "";
+        NEED.remaining.forEach((ev) => {
+          const pl = typeof ev.point_type === "string" && ev.point_type.startsWith("playoff");
+          rows += "<tr><td>" + esc(ev.name) + (ev.is_major ? " <span class=\"g-st\">Major</span>" : "") + "</td><td>" +
+            '<span class="tag ' + (pl ? "pp" : "p" + ev.point_type) + '">' + (pl ? "Playoff" : esc(ev.point_type) + " pts") + "</span></td><td>" +
+            at(ev, 1) + "</td><td>" + at(ev, 5) + "</td><td>" + at(ev, 10) + "</td></tr>";
+        });
+        html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>What the remaining events pay</h2><span class="panel-sub">Points by finish</span></div>' +
+          '<div class="table-scroll"><table class="mini"><tr><th>Event</th><th>Type</th><th>1st</th><th>5th</th><th>10th</th></tr>' + rows + "</table></div></div>";
+      }
+      body.innerHTML = html;
+    }
+
+    function setupNeedPicker() {
+      const sel = document.getElementById("needPick");
+      const sorted = NEED.rows.slice().sort((a, b) => a.name.localeCompare(b.name));
+      sel.innerHTML = '<option value="">Choose a player&hellip;</option>' +
+        sorted.map((r) => '<option value="' + esc(r.handle) + '">' + esc(r.name) + " (" + esc(r.handle) + ")</option>").join("");
+      sel.addEventListener("change", () => {
+        const h = sel.value;
+        try { if (h) localStorage.setItem(NEED_KEY, h); } catch (e) { /* private mode: fine */ }
+        try { history.replaceState(null, "", h ? "#/need/" + encodeURIComponent(h) : "#/need"); } catch (e) { /* ignore */ }
+        renderNeed(h);
+      });
+    }
+
+    function showNeed(handle) {
+      const sel = document.getElementById("needPick");
+      if (!handle) { try { handle = localStorage.getItem(NEED_KEY) || ""; } catch (e) { handle = ""; } }
+      const ok = handle && NEED.rows.some((r) => r.handle.toLowerCase() === handle.toLowerCase());
+      const real = ok ? NEED.rows.find((r) => r.handle.toLowerCase() === handle.toLowerCase()).handle : "";
+      sel.value = real;
+      renderNeed(real);
+    }
+
+    setupNeedPicker();
     renderSchedule();
     window.addEventListener("hashchange", route);
     route();
