@@ -1,0 +1,13 @@
+{
+  "_comment": "Maps spelling variants between the ESPN feed and DraftKings names. Key = the name you want to treat as canonical; values = every other spelling seen. Matching ignores case, accents and punctuation already, so only genuinely different spellings (nicknames, middle initials) belong here.",
+  "Thorbjorn Olesen": ["Thorbjørn Olesen"],
+  "Jordan L. Smith": ["Jordan Smith"],
+  "Matthew McCarty": ["Matt McCarty"],
+  "John Keefer": ["Johnny Keefer"],
+  "Nicolas Echavarria": ["Nico Echavarria"],
+  "Zachary Bauchou": ["Zach Bauchou"],
+  "Benjamin James": ["Ben James"],
+  "Cameron Davis": ["Cam Davis"],
+  "Seonghyeon Kim": ["S.H. Kim"],
+  "Kris Ventura": ["Kristoffer Ventura"]
+}

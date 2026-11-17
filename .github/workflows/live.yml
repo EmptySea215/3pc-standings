@@ -1,0 +1,53 @@
+name: Update site and live scores
+
+# Scores the current tournament from ESPN's public leaderboard and republishes the site.
+# No secrets, no Claude, no pip install: standard-library Python only.
+#   - every push to main (so a new index.html or lineups file goes live right away)
+#   - every 10 minutes Thursday to Monday (UTC): covers every US round and the Sunday finish
+#   - or by hand: Actions tab > "Update site and live scores" > Run workflow
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/10 * * * 4,5,6,0,1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Score the event and assemble the site
+        run: python scripts/build_site.py
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,225 @@
+"""
+Fetches PGA Tour leaderboards from ESPN's public JSON feed and turns them
+into per-golfer DK fantasy points via engine/dk_scoring.py.
+
+No browser, no login, no Claude: a plain HTTPS GET. Validated 2026-11 against
+real DK results (Tour Championship, Valero Texas Open) - see
+backtest_2026.py for the full-season check.
+
+Key rules baked in here (each confirmed against real weekly CSVs):
+  * Hole par is derived as strokes - score_relative_to_par (feed gives both).
+  * Tied finishers share a place: place = 1 + (# finishers strictly better).
+  * A golfer "made the cut" iff they completed 4 rounds. Placement bonus only
+    applies to them, and only once the event is final.
+  * Rounds with < 18 holes (in progress / WD / DQ) still earn per-hole points
+    but never earn round bonuses (bogey-free, streak) - see partial_round_points.
+"""
+from __future__ import annotations
+
+import json
+import os
+import unicodedata
+import urllib.request
+from dataclasses import dataclass, field
+
+from engine.dk_scoring import (
+    ALL_ROUNDS_UNDER_70_BONUS,
+    PLACEMENT_BONUS,
+    hole_points,
+    round_points,
+    tournament_points,
+)
+
+SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates={dates}"
+ALIAS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "config", "golfer_aliases.json")
+
+
+_TRANSLIT = str.maketrans({"ø": "o", "Ø": "O", "æ": "ae", "Æ": "AE", "ł": "l", "Ł": "L",
+                           "đ": "d", "Đ": "D", "ð": "d", "þ": "th", "ß": "ss"})
+
+
+def norm(name: str) -> str:
+    """Accent/punctuation/case-insensitive key for matching golfer names.
+
+    NFKD alone drops letters like ø (Højgaard, Thorbjørn) instead of
+    transliterating them, so those are mapped explicitly first.
+    """
+    s = unicodedata.normalize("NFKD", name.translate(_TRANSLIT)).encode("ascii", "ignore").decode().lower()
+    return "".join(ch for ch in s if ch.isalnum())
+
+
+def name_matches(csv_name: str, feed_norm_names: dict[str, str], aliases: dict[str, str]) -> str | None:
+    """Resolve a DK/CSV golfer name to a key in feed_norm_names.
+
+    Handles: accents/case/punctuation (norm), the alias file, and CSV names where
+    non-ASCII letters were corrupted to '?' (treated as a one-letter wildcard,
+    accepted only when exactly one feed name fits).
+    """
+    n = norm(csv_name) if "?" not in csv_name else None
+    if n:
+        # aliases are directional (variant -> canonical) but the DK name may be
+        # either side, so accept a match in both directions.
+        if n in feed_norm_names:
+            return n
+        canon = aliases.get(n)
+        if canon and canon in feed_norm_names:
+            return canon
+        return next((k for k in feed_norm_names if aliases.get(k) == n), None)
+    import re
+    pat = re.compile("^" + "".join("[a-z]" if ch == "?" else re.escape(ch)
+                                   for ch in "".join(c for c in csv_name.lower() if c.isalnum() or c == "?")) + "$")
+    hits = [k for k in feed_norm_names if pat.match(k)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def load_aliases(path: str = ALIAS_PATH) -> dict[str, str]:
+    """{norm(any variant): norm(canonical)} - maps feed/DK spelling variants together."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        raw = json.load(f)
+    out = {}
+    for canonical, variants in raw.items():
+        if canonical.startswith("_"):
+            continue
+        for v in variants:
+            out[norm(v)] = norm(canonical)
+    return out
+
+
+def _rel(display: str) -> int:
+    d = display.strip()
+    return 0 if d == "E" else int(d)
+
+
+def _hole_par(strokes: int, display: str) -> int:
+    """Par for one hole from strokes + the feed's score-vs-par label.
+
+    The label is "E", "-1", "+2" ... but for extreme scores ESPN writes the
+    word "OTHER" (e.g. an 11 at Shinnecock). DK pays a flat -1 for any hole
+    double bogey or worse, so for OTHER we only need a par that makes the hole
+    land in that bucket; a 1-2 stroke OTHER is treated as double-eagle-or-better.
+    """
+    d = display.strip()
+    if d.upper() == "OTHER":
+        return strokes - 3 if strokes >= 6 else strokes + 3
+    return strokes - _rel(d)
+
+
+@dataclass
+class GolferResult:
+    name: str
+    rounds: list[dict] = field(default_factory=list)      # complete 18-hole rounds
+    partial: dict | None = None                           # in-progress round: {"scores","pars"}
+    playoff: dict | None = None                           # playoff holes (never scored by DK)
+    to_par: int | None = None
+    order: int | None = None
+    parse_errors: list[str] = field(default_factory=list)  # loud, not silent
+
+    @property
+    def rounds_complete(self) -> int:
+        return len(self.rounds)
+
+
+def parse_competitor(c: dict) -> GolferResult:
+    g = GolferResult(name=c["athlete"]["displayName"], order=c.get("order"))
+    try:
+        g.to_par = _rel(c.get("score") or "")
+    except ValueError:
+        g.to_par = None
+    for r in c.get("linescores", []):
+        holes = r.get("linescores", []) or []
+        if not holes:
+            continue
+        period = r.get("period")
+        try:
+            scores = [int(h["value"]) for h in holes]
+            pars = [_hole_par(int(h["value"]), h["scoreType"]["displayValue"]) for h in holes]
+        except (KeyError, ValueError, TypeError) as e:
+            g.parse_errors.append(f"round {period}: {type(e).__name__}: {e}")
+            continue
+        if len(holes) == 18 and (period or 0) <= 4:
+            g.rounds.append({"scores": scores, "pars": pars})
+        elif (period or 0) > 4:
+            g.playoff = {"scores": scores, "pars": pars}
+        else:
+            g.partial = {"scores": scores, "pars": pars}
+    # A 5th "round" of <18 holes after 4 complete rounds is a playoff even if
+    # the feed numbers it oddly; never score it.
+    if g.rounds_complete >= 4 and g.partial:
+        g.playoff, g.partial = g.partial, None
+    return g
+
+
+def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> dict:
+    """Returns {"event_id","name","final","golfers":[GolferResult]}.
+
+    `dates` is ESPN's YYYYMMDD or YYYYMMDD-YYYYMMDD range. If several events
+    fall in the range, pass event_id to pick one; otherwise the first is used.
+    """
+    data = json.load(urllib.request.urlopen(SCOREBOARD_URL.format(dates=dates), timeout=timeout))
+    events = data.get("events", [])
+    if not events:
+        raise ValueError(f"no events for dates={dates}")
+    ev = next((e for e in events if e["id"] == event_id), events[0]) if event_id else events[0]
+    comp = ev["competitions"][0]
+    comp.setdefault("competitors", [])  # before the field posts ESPN omits this key
+    status = comp.get("status", {}).get("type", {})
+    return {
+        "event_id": ev["id"],
+        "name": ev["name"],
+        "final": bool(status.get("completed")),
+        "state": status.get("state"),                       # pre | in | post
+        "period": comp.get("status", {}).get("period"),     # round currently being played
+        "detail": status.get("detail"),
+        # Team events (Zurich) list teams, not athletes: not supported here yet.
+        "team_event": any("athlete" not in c for c in comp["competitors"]),
+        "golfers": [parse_competitor(c) for c in comp["competitors"] if "athlete" in c],
+        "_all_events": [(e["id"], e["name"]) for e in events],
+    }
+
+
+def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
+    """Tied-place for every golfer who completed 4 rounds.
+
+    Ties share a place. The exception is a playoff: golfers who played extra
+    holes are separated (winner 1st, runner-up 2nd, ...) using the feed's
+    final `order`, because DK pays playoff losers 2nd, not a share of 1st.
+    """
+    finishers = [g for g in golfers if g.rounds_complete >= 4 and g.to_par is not None]
+    places = {g.name: 1 + sum(1 for o in finishers if o.to_par < g.to_par) for g in finishers}
+    by_score: dict[int, list[GolferResult]] = {}
+    for g in finishers:
+        by_score.setdefault(g.to_par, []).append(g)
+    for group in by_score.values():
+        if any(g.playoff for g in group):
+            base = min(places[g.name] for g in group)
+            ordered = sorted(group, key=lambda g: (g.order if g.order is not None else 10**6))
+            for i, g in enumerate(ordered):
+                places[g.name] = base + i
+    return places
+
+
+def partial_round_points(scores: list[int], pars: list[int]) -> float:
+    """Per-hole points only (no round bonuses) for an unfinished round."""
+    return sum(hole_points(s, p) for s, p in zip(scores, pars))
+
+
+def golfer_points(g: GolferResult, place: int | None, final: bool) -> float:
+    """DK points for one golfer. Placement bonus only when the event is final."""
+    pts = sum(round_points(r["scores"], r["pars"]) for r in g.rounds)
+    if g.partial:
+        pts += partial_round_points(g.partial["scores"], g.partial["pars"])
+    if final and g.rounds_complete >= 4:
+        if all(sum(r["scores"]) < 70 for r in g.rounds):
+            pts += ALL_ROUNDS_UNDER_70_BONUS
+        if place is not None:
+            pts += PLACEMENT_BONUS.get(place, 0)
+    return pts
+
+
+def event_points(result: dict) -> dict[str, float]:
+    """{golfer_name: DK points} for everyone in the feed."""
+    places = assign_places(result["golfers"])
+    return {g.name: golfer_points(g, places.get(g.name), result["final"]) for g in result["golfers"]}
