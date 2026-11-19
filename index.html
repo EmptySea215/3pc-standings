@@ -862,22 +862,6 @@
   .search input::placeholder { color: var(--ink-faint); }
   .empty { padding: 22px 16px; text-align: center; color: var(--ink-faint); font-size: 14px; }
 
-  /* ---------- Copy link ---------- */
-
-  .sheet-copy {
-    flex-shrink: 0;
-    padding: 6px 11px;
-    border-radius: 100px;
-    border: 1px solid var(--line-strong);
-    background: var(--surface);
-    color: var(--accent);
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .sheet-copy:hover { background: var(--accent-soft); }
-
   /* ---------- This week (live) ---------- */
 
   .week-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1340,8 +1324,6 @@
   .t5 .d.down { color: var(--bad); }
 
   .post-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 14px 18px; }
-  .post-actions .grow { flex: 1; }
-  .post-sign { padding: 0 18px 18px; font-size: 13px; font-weight: 600; color: var(--ink-faint); }
   .btn { padding: 8px 15px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-dim); font-size: 13.5px; font-weight: 600; cursor: pointer; text-decoration: none; }
   .btn:hover { background: var(--surface-2); }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -1676,7 +1658,6 @@
       <div class="sheet-name" id="sheetName"></div>
       <div class="sheet-handle-text" id="sheetHandleText"></div>
     </div>
-    <button class="sheet-copy" id="sheetCopy" type="button">Copy link</button>
     <button class="sheet-close" id="sheetClose" aria-label="Close">&times;</button>
   </div>
   <div class="sheet-totals" id="sheetTotals"></div>
@@ -1712,7 +1693,7 @@
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
 
   const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
-  const BUILD_TIME = "2026-11-19T21:47:04+00:00";        // when this page was generated (UTC)
+  const BUILD_TIME = "2026-11-19T22:04:53+00:00";        // when this page was generated (UTC)
   const TEST_EVENT = {"enabled": true, "key": "test", "name": "RSM - Test", "detail": "RSM Classic test contest", "date": "2026-11-19", "point_type": "600"};           // display-only test event shown first in the schedule (config/test_event.json), or null
   const ROSTER_ALIASES = {"dhixson43": "dhixson43", "kma93": "KMA93", "sahrane": "Sahrane", "childs83": "childs83", "dougraff": "dougraff", "buckeyenut27": "BuckeyeNut27", "ajbeckface": "AJBeckFace", "scamuso03": "SCamuso03", "jtroendly295": "Jtroendly295", "jfasano": "jfasano", "changeup31": "jfasano", "scolli87": "Scolli87", "mawillgolf": "mawillgolf", "bcassidy2": "bcassidy2", "walkerdb7": "walkerdb7", "actj": "actj", "flynny1088": "flynny1088", "clinnabary": "clinnabary", "asteg18": "asteg18", "proshoppete3317": "Proshoppete3317", "canes_56": "Canes_56", "mzwicky2014": "mzwicky2014", "mikegatti1": "mikegatti1", "3dirtysanchez3": "3dirtysanchez3", "ajsimon1": "AJSimon1", "shawn_bray10": "Shawn_bray10", "gregschultz25": "gregschultz25", "mhopple25": "MHopple25", "nkumar228": "Nkumar228", "huntertowell": "HunterTowell", "mawa": "Mawa", "karmeny1022": "Karmeny1022", "wrestlerboy15": "wrestlerboy15", "jodylee511": "Jodylee511", "smellsdigs": "Smellsdigs", "smellsdiggs": "Smellsdigs", "mpaquette311": "mpaquette311", "dawkman": "dawkman", "papernorm": "papernorm", "superman-71": "superman-71", "troubleball10": "troubleball10", "wellerm2": "Wellerm2", "g_zimm": "g_zimm", "rottensquash": "RottenSquash", "jrs6742001": "jrs6742001", "cdcollins213": "cdcollins213", "gmoney0710": "GMoney0710", "zocollin19932": "zocollin19932"};  // lowercase DK handle spelling -> roster handle (smellsdiggs -> Smellsdigs ...)
   const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};            // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
@@ -1984,37 +1965,7 @@
       movers, top5, story, sharedLine, lineups, hasMovement: !!before };
   }
 
-  // Plain-text version for pasting into the group chat; mirrors the layout of the Monday emails.
   const MEDAL = { 1: "\u{1F947}", 2: "\u{1F948}", 3: "\u{1F949}" };
-  function recapText(r, url, note) {
-    const fmt = (n) => (n == null ? "-" : n % 1 === 0 ? String(n) : n.toFixed(1));
-    const L = [];
-    L.push("League,");
-    L.push("");
-    r.story.forEach((s) => L.push(s));
-    L.push("");
-    L.push("\u{1F4A5} " + r.event.name.toUpperCase() + " WEEKLY PODIUM \u{1F4A5}");
-    r.podium.forEach((p) => {
-      L.push("");
-      L.push((MEDAL[p.place] || "") + " " + ordinal(p.place) + " — " + p.name + " (" + p.handle + ") — " + fmt(p.raw) + " pts");
-      if (p.golfers.length) L.push(p.golfers.join(", "));
-    });
-    if (r.sharedLine) { L.push(""); L.push("Interestingly, " + r.sharedLine); }
-    if (r.hasMovement && (r.movers.up.length || r.movers.down.length)) {
-      L.push("");
-      L.push("MOVING IN THE STANDINGS");
-      r.movers.up.forEach((m) => L.push("▲ " + m.name + ": " + ordinal(m.from) + " to " + ordinal(m.to)));
-      r.movers.down.forEach((m) => L.push("▼ " + m.name + ": " + ordinal(m.from) + " to " + ordinal(m.to)));
-    }
-    L.push("");
-    L.push("OVERALL TOP 5");
-    r.top5.forEach((t) => L.push(t.rank + ". " + t.name + " — " + fmt(t.pts)));
-    if (note) { L.push(""); L.push(note); }
-    L.push("");
-    L.push("3-Putt Cup Commissioner's Office");
-    if (url) { L.push(url); }
-    return L.join("\n");
-  }
   /*RECAP-CALC-END*/
 
   /*STATUS-CALC-START*/
@@ -2686,25 +2637,6 @@
       // replaceState updates the address bar without firing hashchange or adding history entries
       try { history.replaceState(null, "", h); } catch (e) { /* file:// or sandboxed: ignore */ }
     }
-
-    document.getElementById("sheetCopy").addEventListener("click", async (ev) => {
-      if (!currentPerson) return;
-      const url = location.origin + location.pathname + "#/player/" + encodeURIComponent(currentPerson.dk_handle) + (currentMetric === "overall" ? "" : "/" + currentMetric);
-      const btn = ev.currentTarget;
-      let ok = false;
-      try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {
-        const ta = document.createElement("textarea");
-        ta.value = url;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
-        ta.remove();
-      }
-      btn.textContent = ok ? "Copied!" : "Press Ctrl+C";
-      setTimeout(() => { btn.textContent = "Copy link"; }, 1600);
-    });
 
     // ---------- Category (segment/majors) standings ----------
     function eventsForMetric(metricKey) {
@@ -3517,7 +3449,6 @@
     const maxIdx = asOfKey && ALL_KEYS.indexOf(asOfKey) >= 0 ? ALL_KEYS.indexOf(asOfKey) : Infinity;
     const RECAP_KEYS = recapKeys(STANDINGS, SEASON_SCHEDULE).filter((k) => ALL_KEYS.indexOf(k) <= maxIdx); // newest first
     const SEEN_KEY = "3pc_recap_seen";
-    const SITE_URL = location.origin + location.pathname;
 
     function seenKey() { try { return localStorage.getItem(SEEN_KEY); } catch (e) { return null; } }
     function markSeen(k) { try { localStorage.setItem(SEEN_KEY, k); } catch (e) { /* private mode: fine */ } }
@@ -3549,18 +3480,6 @@
           '</div><div class="ri-win">' + (r.winners.length ? esc(r.winners.map((w) => w.name).join(" & ")) + " &middot; " + pf(r.winners[0].raw) + " pts" : "") +
           '</div></div><div class="ri-date">' + esc(fmtShort(r.event)) + "</div></a>";
       }).join("");
-    }
-
-    function copyText(text, btn, idle) {
-      const done = (ok) => { btn.textContent = ok ? "Copied!" : "Press Ctrl+C"; setTimeout(() => { btn.textContent = idle; }, 1700); };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
-      else {
-        const ta = document.createElement("textarea");
-        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.select();
-        let ok = false; try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-        ta.remove(); done(ok);
-      }
     }
 
     function renderRecap(key) {
@@ -3598,14 +3517,11 @@
 
       if (note) h += '<div class="post-note"><b>From the Commissioner</b>' + note.split(/\n\n+/).map((p) => "<p>" + esc(p) + "</p>").join("") + "</div>";
 
-      h += '<div class="post-actions"><button class="btn primary" id="recapCopy" type="button">Copy for group chat</button><span class="grow"></span>' +
+      h += '<div class="post-actions">' +
         (i < RECAP_KEYS.length - 1 ? '<a class="btn" href="#/recap/' + encodeURIComponent(RECAP_KEYS[i + 1]) + '">&larr; Earlier</a>' : "") +
         (i > 0 ? '<a class="btn" href="#/recap/' + encodeURIComponent(RECAP_KEYS[i - 1]) + '">Later &rarr;</a>' : "") + "</div>" +
-        '<div class="post-sign">3-Putt Cup Commissioner&rsquo;s Office</div></article>';
+        '</article>';
       body.innerHTML = h;
-
-      const url = SITE_URL + "#/recap/" + encodeURIComponent(key);
-      document.getElementById("recapCopy").addEventListener("click", (ev) => copyText(recapText(r, url, note), ev.currentTarget, "Copy for group chat"));
     }
 
     function showRecap(key) {
