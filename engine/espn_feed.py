@@ -153,6 +153,21 @@ def parse_competitor(c: dict) -> GolferResult:
     return g
 
 
+def _is_final(ev_status: dict, comp_status: dict) -> bool:
+    """True only when the TOURNAMENT is over.
+
+    ESPN marks the competition "STATUS_PLAY_COMPLETE" with completed=True at the end of EVERY round ("Round 1 - Play
+    Complete"), while the event itself stays "STATUS_IN_PROGRESS" until Sunday's finish (then both say STATUS_FINAL).
+    Trusting the competition flag alone declared the RSM Classic final on Thursday night: no live placement bonus,
+    "Final · unofficial" on the site, and the page stopped refreshing. The event-level status is the authority;
+    if a payload has none, fall back to the competition but never count a between-rounds "Play Complete" as final."""
+    if not comp_status.get("completed"):
+        return False
+    if ev_status:
+        return bool(ev_status.get("completed"))
+    return comp_status.get("name") != "STATUS_PLAY_COMPLETE"
+
+
 def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> dict:
     """Returns {"event_id","name","final","golfers":[GolferResult]}.
 
@@ -167,11 +182,13 @@ def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> d
     comp = ev["competitions"][0]
     comp.setdefault("competitors", [])  # before the field posts ESPN omits this key
     status = comp.get("status", {}).get("type", {})
+    ev_status = ev.get("status", {}).get("type", {})
     return {
         "event_id": ev["id"],
         "name": ev["name"],
-        "final": bool(status.get("completed")),
-        "state": status.get("state"),                       # pre | in | post
+        "final": _is_final(ev_status, status),
+        # The EVENT's state, not the round's: between rounds the competition reads "post" but the tournament is still "in".
+        "state": ev_status.get("state") or status.get("state"),   # pre | in | post
         "period": comp.get("status", {}).get("period"),     # round currently being played
         "detail": status.get("detail"),
         # Team events (Zurich) list teams, not athletes: not supported here yet.
