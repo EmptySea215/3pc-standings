@@ -27,17 +27,19 @@ from engine.lineups import parse_lineup
 
 
 def golfer_status(g, period: int | None, final: bool) -> str:
-    """Short human status for the live panel: done | playing | yet | cut.
+    """Short human status for the live panel: done | playing | yet | cut | out.
 
     done    - finished the round in progress (or the whole event is final)
     playing - mid-round
     yet     - hasn't teed off in the current round
     cut     - missed the cut / withdrew (<=2 rounds once round 3+ is underway)
+    out     - not in the tournament field at all (withdrew before teeing off, or never entered): scores 0 in DraftKings
+              and will never play, so he is not counted in "left"
     Only the live test on a real event can confirm these thresholds; they are
     deliberately simple.
     """
     if g is None:
-        return "yet"
+        return "out"
     if final:
         return "cut" if g.rounds_complete < 4 else "done"
     p = period or 1
