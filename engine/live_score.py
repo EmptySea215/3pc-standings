@@ -77,7 +77,10 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
                 p = pts[feed[key]]
                 st = golfer_status(objs.get(feed[key]), result.get("period"), result["final"])
             golfer_fpts[g] = p
-            detail.append({"golfer": g, "points": p, "status": st})
+            # DraftKings exports turn accented letters into '?' ("Sami V?lim?ki"); when the golfer was matched to the
+            # feed, show the feed's correctly spelled name instead. Scoring above still uses the DK spelling as given.
+            shown = feed[key] if key is not None and "?" in g else g
+            detail.append({"golfer": shown, "points": p, "status": st})
             total += p
         scored.append({"name": e["name"], "dk_handle": e.get("dk_handle"),
                        "points": total, "golfers": detail,
