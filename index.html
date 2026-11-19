@@ -132,7 +132,7 @@
   .status-chip.stale::before, .status-chip.offline::before { background: var(--gold); }
   @media (prefers-reduced-motion: reduce) { .status-chip.live::before { animation: none; } }
 
-  @media (max-width: 479px) {
+  @media (max-width: 599px) {
     .status-chip .txt-long { display: none; }
     .status-chip .txt-short { display: inline; }
     .topbar.has-status .season-pill { display: none; }  /* make room on phones while a status is showing */
@@ -192,8 +192,8 @@
     background: none; color: var(--ink-dim); font: inherit; font-size: 13px; cursor: pointer;
   }
   .me-clear[hidden] { display: none; }
+  @media (max-width: 599px) { .me-chip .me-label { display: none; } }
   @media (max-width: 479px) {
-    .me-chip .me-label { display: none; }
     .me-pop { position: fixed; left: 12px; right: 12px; top: 58px; width: auto; max-width: none; }
   }
 
@@ -817,12 +817,18 @@
     font-weight: 600;
     color: var(--ink-dim);
     text-decoration: none;
+    white-space: nowrap;
   }
+
+  /* with the name chip and a status message up top, drop the season pill before the nav gets squeezed */
+  .topbar.has-status .season-pill { display: none; }
+
+  @media (max-width: 479px) { .nav a { white-space: normal; padding: 6px 4px; } }   /* small phones: 4 links in one row, labels may wrap */
 
   .nav a:hover { background: var(--surface-2); color: var(--ink); }
   .nav a[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
 
-  @media (max-width: 899px) {
+  @media (max-width: 1019px) {
     .topbar-inner { flex-wrap: wrap; row-gap: 6px; }
     .nav { order: 3; width: 100%; margin: 0; }
     .nav a { flex: 1; text-align: center; }
@@ -1686,10 +1692,11 @@
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
 
   const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
-  const BUILD_TIME = "2026-11-19T18:13:14+00:00";        // when this page was generated (UTC)
+  const BUILD_TIME = "2026-11-19T18:21:53+00:00";        // when this page was generated (UTC)
   const TEST_EVENT = {"enabled": true, "key": "test", "name": "RSM - Test", "detail": "RSM Classic test contest", "date": "2026-11-19", "point_type": "600"};           // display-only test event shown first in the schedule (config/test_event.json), or null
   const ROSTER_ALIASES = {"dhixson43": "dhixson43", "kma93": "KMA93", "sahrane": "Sahrane", "childs83": "childs83", "dougraff": "dougraff", "buckeyenut27": "BuckeyeNut27", "ajbeckface": "AJBeckFace", "scamuso03": "SCamuso03", "jtroendly295": "Jtroendly295", "jfasano": "jfasano", "changeup31": "jfasano", "scolli87": "Scolli87", "mawillgolf": "mawillgolf", "bcassidy2": "bcassidy2", "walkerdb7": "walkerdb7", "actj": "actj", "flynny1088": "flynny1088", "clinnabary": "clinnabary", "asteg18": "asteg18", "proshoppete3317": "Proshoppete3317", "canes_56": "Canes_56", "mzwicky2014": "mzwicky2014", "mikegatti1": "mikegatti1", "3dirtysanchez3": "3dirtysanchez3", "ajsimon1": "AJSimon1", "shawn_bray10": "Shawn_bray10", "gregschultz25": "gregschultz25", "mhopple25": "MHopple25", "nkumar228": "Nkumar228", "huntertowell": "HunterTowell", "mawa": "Mawa", "karmeny1022": "Karmeny1022", "wrestlerboy15": "wrestlerboy15", "jodylee511": "Jodylee511", "smellsdigs": "Smellsdigs", "smellsdiggs": "Smellsdigs", "mpaquette311": "mpaquette311", "dawkman": "dawkman", "papernorm": "papernorm", "superman-71": "superman-71", "troubleball10": "troubleball10", "wellerm2": "Wellerm2", "g_zimm": "g_zimm", "rottensquash": "RottenSquash", "jrs6742001": "jrs6742001", "cdcollins213": "cdcollins213", "gmoney0710": "GMoney0710", "zocollin19932": "zocollin19932"};  // lowercase DK handle spelling -> roster handle (smellsdiggs -> Smellsdigs ...)
   const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};            // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
+  const PLAYOFF_FIELDS = {"playoff_fedex": 25, "playoff_bmw": 15, "playoff_tour": 10};   // entries that play FedEx / BMW / Tour Championship (config/playoff_fields.json)
 
   // Little FedEx-Cup-style trophies for past season champions: one per title (3 max, then "x4").
   function trophyHtml(handle) {
@@ -1768,7 +1775,32 @@
       playedCount[m] = schedule.filter((ev, i) => occurred[i] && metrics[m](ev) &&
         standings.some((p, j) => byKey[j][ev.key] && byKey[j][ev.key].played)).length;
     });
-    return { rows, remaining, remMax, remCount, playedCount, eventsPlayed: occurred.filter(Boolean).length, totalEvents: schedule.length };
+    // ---- Playoff reach (overall race only) ----
+    // Playoff points are only open to qualifiers: the top fields.playoff_fedex (25) in the SEASON standings after the regular
+    // season play FedEx, the top 15 in the season standings after that play BMW, the top 10 after BMW play the Tour Championship
+    // (verified against who actually played in 2026; the numbers live in config/playoff_fields.json). So the points an entry can
+    // still reach are the regular-season events left, plus the remaining playoff events only if they can still qualify for the
+    // next one. Upper bound: a qualifier is assumed able to win every remaining playoff event (and so keep qualifying).
+    const fields = opts.playoffFields || { playoff_fedex: 25, playoff_bmw: 15, playoff_tour: 10 };
+    const isPO = (ev) => typeof ev.point_type === "string" && ev.point_type.indexOf("playoff") === 0;
+    const poLeft = remaining.filter(isPO), regLeft = remaining.filter((ev) => !isPO(ev));
+    const regMax = regLeft.reduce((s, ev) => s + best(ev), 0);
+    const reach = { overall: {} };
+    rows.forEach((r, j) => {
+      let status = null, eligible = false;
+      if (poLeft.length) {
+        const field = fields[poLeft[0].point_type] || Infinity;
+        const ahead = rows.filter((o, k) => k !== j && o.overall > r.overall + regMax).length;    // already out of reach even if r maxes the regular season
+        eligible = ahead < field;
+        status = !eligible ? "out" : regLeft.length ? "maybe" : "in";
+      }
+      reach.overall[r.handle] = {
+        max: regMax + (eligible ? poLeft.reduce((s, ev) => s + best(ev), 0) : 0),
+        count: regLeft.length + (eligible ? poLeft.length : 0),
+        playoffs: status,                                   // null (none left) | "in" | "maybe" (regular season still running) | "out"
+      };
+    });
+    return { rows, remaining, remMax, remCount, playedCount, reach, playoffFields: fields, eventsPlayed: occurred.filter(Boolean).length, totalEvents: schedule.length };
   }
 
   // Where one entry stands against a target finish (top N) in one race.
@@ -1777,12 +1809,16 @@
   //   eliminated: even maxing every remaining event, at least N rivals are already ahead of that total
   function analyze(need, metric, me, N) {
     const rows = need.rows;
-    const remMax = need.remMax[metric], remCount = need.remCount[metric];
+    const sharedMax = need.remMax[metric], sharedCount = need.remCount[metric];
+    // Each entry's own reach (playoff qualification, see buildNeed). Without it (small test fixtures) everyone shares one figure.
+    const reach = need.reach && need.reach[metric];
+    const maxOf = (r) => (reach && reach[r.handle] ? reach[r.handle].max : sharedMax);
+    const remMax = maxOf(me), remCount = reach && reach[me.handle] ? reach[me.handle].count : sharedCount;
     const sorted = rows.slice().sort((a, b) => b[metric] - a[metric] || a.name.localeCompare(b.name));
     const myPts = me[metric], rank = me["rank_" + metric];
     const others = rows.filter((r) => r !== me);
-    const res = { metric, N, rank, myPts, remMax, remCount, final: remCount === 0 };
-    res.couldFinishAhead = others.filter((r) => r[metric] + remMax > myPts).length;
+    const res = { metric, N, rank, myPts, remMax, remCount, final: sharedCount === 0 };
+    res.couldFinishAhead = others.filter((r) => r[metric] + maxOf(r) > myPts).length;
     res.clinched = res.couldFinishAhead + 1 <= N;
     res.definitelyAhead = others.filter((r) => r[metric] > myPts + remMax).length;
     res.eliminated = res.definitelyAhead >= N;
@@ -2157,7 +2193,7 @@
     const occurred = schedule.filter((ev) => !need.remaining.some((r) => r.key === ev.key)).map((ev) => ev.key);
     let first = occurred.length - 1;
     for (let i = occurred.length - 2; i >= 0; i--) {
-      const nd = cache && cache[occurred[i]] ? cache[occurred[i]] : buildNeed(standings, schedule, tables, { asOf: occurred[i] });
+      const nd = cache && cache[occurred[i]] ? cache[occurred[i]] : buildNeed(standings, schedule, tables, { asOf: occurred[i], playoffFields: need.playoffFields });
       if (cache) cache[occurred[i]] = nd;
       const r = rowOf(nd);
       if (r && analyze(nd, metric, r, N).eliminated) first = i; else break;
@@ -3143,7 +3179,7 @@
     // ---------- What do I need? ----------
     // ?asof=<event key> rewinds the standings to just after that event (for testing the tool mid-season).
     const asOfKey = new URLSearchParams(location.search).get("asof");
-    const NEED = buildNeed(STANDINGS, SEASON_SCHEDULE, POINT_TABLES, { asOf: asOfKey });
+    const NEED = buildNeed(STANDINGS, SEASON_SCHEDULE, POINT_TABLES, { asOf: asOfKey, playoffFields: PLAYOFF_FIELDS });
     const NEED_KEY = ME_KEY;                       // one remembered name for the whole site ("This is me" + What I need)
 
     function ord(n) {
@@ -3252,8 +3288,12 @@
         if (s.top10) tiles.push(["Top 10", s.top10.inside ? "In" + (s.top10.margin != null ? " <small>" + (s.top10.margin > 0 ? fmtPts(s.top10.margin) + " pts clear" : "level with 11th") + "</small>" : "") : fmtPts(s.top10.gap) + " pts to get in"]);
         tiles.push(["Behind the leader", s.leader.isMe ? "You lead" : fmtPts(s.leader.gap) + " pts"]);
       }
-      tiles.push(["Events left", String(NEED.remCount[m])]);
-      tiles.push(["Max still available", num(NEED.remMax[m])]);
+      // your own reach: for the overall race, playoff points only count if you can still qualify for the next playoff event
+      const reach = NEED.reach && NEED.reach[m] && NEED.reach[m][me.handle];
+      const poNote = !reach || !reach.playoffs ? "" : reach.playoffs === "out" ? " <small>out of the playoffs</small>"
+        : reach.playoffs === "maybe" ? " <small>incl. playoffs if you qualify</small>" : " <small>incl. playoffs</small>";
+      tiles.push([reach && reach.count !== NEED.remCount[m] ? "Events left for you" : "Events left", String(reach ? reach.count : NEED.remCount[m])]);
+      tiles.push(["Max still available", num(reach ? reach.max : NEED.remMax[m]) + poNote]);
 
       const d = liveData;
       const inLive = !!(d && d.locked && d.entrants && d.entrants.some((e) => resolveMe(e.dk_handle) === me.handle));
@@ -3280,6 +3320,11 @@
         deadWeeks: a.eliminated ? deadWeeks(STANDINGS, SEASON_SCHEDULE, POINT_TABLES, NEED, m, me.handle, a.N, needCache) : null });
       html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Targets</h2><span class="panel-sub">' +
         (m === "overall" ? "Overall race" : m === "majors" ? "Majors + Players" : "Segment " + m.slice(3)) + "</span></div>";
+      if (m === "overall" && NEED.remaining.some((ev) => ev.point_type && String(ev.point_type).indexOf("playoff") === 0)) {
+        const F = NEED.playoffFields;
+        html += '<div class="need-card"><p class="fine" style="margin:0">Playoff points only count for qualifiers: by season standings, the top ' + F.playoff_fedex +
+          " play FedEx, the top " + F.playoff_bmw + " after that play BMW, and the top " + F.playoff_tour + " after that play the Tour Championship.</p></div>";
+      }
       if (m === "overall") {
         const a10 = analyze(NEED, m, me, 10), a3 = analyze(NEED, m, me, 3), a1 = analyze(NEED, m, me, 1);
         html += targetCard("Top 10", a10, me, "", quipFor(a10));
