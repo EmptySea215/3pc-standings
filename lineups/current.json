@@ -1,0 +1,73 @@
+{
+ "week_key": "20261119-401850981",
+ "tournament_name": "The RSM Classic (test contest)",
+ "espn_event_id": "401850981",
+ "espn_dates": "20261119-20261122",
+ "locked_at": "2026-11-19T08:30:00-05:00",
+ "event_key": null,
+ "point_type": "600",
+ "segment": 1,
+ "is_major": false,
+ "entrants": [
+  {
+   "name": "wrestlerboy15",
+   "dk_handle": "wrestlerboy15",
+   "golfers": [
+    "Jackson Koivun",
+    "Ben Kohles",
+    "Davis Thompson",
+    "Kris Ventura",
+    "Max Greyserman",
+    "Sami V?lim?ki"
+   ]
+  },
+  {
+   "name": "jodylee511",
+   "dk_handle": "jodylee511",
+   "golfers": [
+    "Andrew Novak",
+    "Keith Mitchell",
+    "J.T. Poston",
+    "Keegan Bradley",
+    "Lee Hodges",
+    "Ben Silverman"
+   ]
+  },
+  {
+   "name": "BuckeyeNut27",
+   "dk_handle": "BuckeyeNut27",
+   "golfers": [
+    "Jackson Koivun",
+    "Maverick McNealy",
+    "Ryo Hisatsune",
+    "Davis Thompson",
+    "Billy Horschel",
+    "Sam Stevens"
+   ]
+  },
+  {
+   "name": "kma93",
+   "dk_handle": "kma93",
+   "golfers": [
+    "Benjamin James",
+    "Jackson Koivun",
+    "Chris Kirk",
+    "Gordon Sargent",
+    "Matthieu Pavon",
+    "Carson Young"
+   ]
+  },
+  {
+   "name": "AJBeckface",
+   "dk_handle": "AJBeckface",
+   "golfers": [
+    "Blades Brown",
+    "Brian Harman",
+    "Ben Kohles",
+    "Jordan L. Smith",
+    "Kris Ventura",
+    "Erik Van Rooyen"
+   ]
+  }
+ ]
+}

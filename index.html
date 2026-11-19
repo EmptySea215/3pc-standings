@@ -1164,6 +1164,58 @@
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn.primary:hover { filter: brightness(0.94); }
 
+  /* ---------- LIVE button + projected standings ---------- */
+
+  .head-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .head-row h1 { margin: 0; }
+
+  .live-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 15px;
+    border-radius: 100px;
+    border: 1.5px solid var(--bad);
+    background: rgba(192, 57, 43, 0.09);
+    color: var(--bad);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  .live-btn[hidden] { display: none; }
+  .live-btn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bad); animation: flash 1.1s ease-in-out infinite; }
+  .live-btn:hover { background: rgba(192, 57, 43, 0.16); }
+  .live-btn.pressed { background: var(--bad); color: #fff; }
+  .live-btn.pressed .dot { background: #fff; }
+  .live-btn.delayed { color: var(--gold); border-color: var(--gold); background: rgba(154, 106, 8, 0.09); }
+  .live-btn.delayed .dot { background: var(--gold); animation: none; }
+  .live-btn.delayed.pressed { background: var(--gold); color: #fff; }
+  .live-btn.final { color: var(--good); border-color: var(--good); background: rgba(31, 122, 77, 0.08); }
+  .live-btn.final .dot { background: var(--good); animation: none; }
+  .live-btn.final.pressed { background: var(--good); color: #fff; }
+
+  @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+  @media (prefers-reduced-motion: reduce) { .live-btn .dot { animation: none; } }
+
+  .proj-bar {
+    padding: 12px 16px;
+    background: rgba(192, 57, 43, 0.06);
+    border-bottom: 1px solid rgba(192, 57, 43, 0.22);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+  }
+
+  .proj-bar[hidden] { display: none; }
+  .proj-bar .proj-title { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--bad); margin-bottom: 2px; }
+  .proj-bar .proj-title .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); margin-right: 6px; animation: flash 1.1s ease-in-out infinite; }
+  .proj-bar b { color: var(--ink); font-weight: 600; }
+  .proj-bar .proj-note { margin-top: 4px; font-size: 12.5px; color: var(--ink-faint); }
+  .proj-bar .proj-back { margin-top: 8px; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .back.gain { color: var(--accent); font-weight: 600; }
+
   .table-scroll { overflow-x: auto; }
 
   @media (max-width: 479px) {
@@ -1237,7 +1289,7 @@
 <main class="page">
 <div data-view="standings">
   <div class="page-head">
-    <h1>Standings</h1>
+    <div class="head-row"><h1>Standings</h1><button class="live-btn" id="liveBtn" type="button" hidden aria-pressed="false"></button></div>
     <p>Private league &middot; 46 entries &middot; one DraftKings lineup a week. Tap a name for their full season.</p>
   </div>
 
@@ -1247,9 +1299,10 @@
     <section class="col-main" aria-label="Standings">
       <div class="panel">
         <div class="panel-head">
-          <h2>Final Standings</h2>
+          <h2 id="boardTitle">Final Standings</h2>
           <span class="panel-sub">46 entries</span>
         </div>
+        <div class="proj-bar" id="projBar" hidden></div>
         <div class="board-tabs" id="boardTabs" role="tablist">
           <button class="board-tab active" data-metric="overall">Overall</button>
           <button class="board-tab" data-metric="majors">Majors</button>
@@ -1462,8 +1515,9 @@
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
 
   const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
-  const BUILD_TIME = "2026-11-17T20:52:37+00:00";        // when this page was generated (UTC)
-  const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};             // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
+  const BUILD_TIME = "2026-11-19T16:09:17+00:00";        // when this page was generated (UTC)
+  const ROSTER_ALIASES = {"dhixson43": "dhixson43", "kma93": "KMA93", "sahrane": "Sahrane", "childs83": "childs83", "dougraff": "dougraff", "buckeyenut27": "BuckeyeNut27", "ajbeckface": "AJBeckFace", "scamuso03": "SCamuso03", "jtroendly295": "Jtroendly295", "jfasano": "jfasano", "changeup31": "jfasano", "scolli87": "Scolli87", "mawillgolf": "mawillgolf", "bcassidy2": "bcassidy2", "walkerdb7": "walkerdb7", "actj": "actj", "flynny1088": "flynny1088", "clinnabary": "clinnabary", "asteg18": "asteg18", "proshoppete3317": "Proshoppete3317", "canes_56": "Canes_56", "mzwicky2014": "mzwicky2014", "mikegatti1": "mikegatti1", "3dirtysanchez3": "3dirtysanchez3", "ajsimon1": "AJSimon1", "shawn_bray10": "Shawn_bray10", "gregschultz25": "gregschultz25", "mhopple25": "MHopple25", "nkumar228": "Nkumar228", "huntertowell": "HunterTowell", "mawa": "Mawa", "karmeny1022": "Karmeny1022", "wrestlerboy15": "wrestlerboy15", "jodylee511": "Jodylee511", "smellsdigs": "Smellsdigs", "smellsdiggs": "Smellsdigs", "mpaquette311": "mpaquette311", "dawkman": "dawkman", "papernorm": "papernorm", "superman-71": "superman-71", "troubleball10": "troubleball10", "wellerm2": "Wellerm2", "g_zimm": "g_zimm", "rottensquash": "RottenSquash", "jrs6742001": "jrs6742001", "cdcollins213": "cdcollins213", "gmoney0710": "GMoney0710", "zocollin19932": "zocollin19932"};   // lowercase DK handle spelling -> roster handle (smellsdiggs -> Smellsdigs ...)
+  const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};            // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
 
   // Little FedEx-Cup-style trophies for past season champions: one per title (3 max, then "x4").
   function trophyHtml(handle) {
@@ -1809,6 +1863,59 @@
   }
   /*TROPHY-CALC-END*/
 
+  /*PROJ-CALC-START*/
+  // ---------- Live projected standings (pure; unit-tested in Node) ----------
+  // Needs excelRank() / buildNeed() above. "What would the standings be if this week ended right now?"
+
+  // 3PC points for one week from live DraftKings scores. Same rules as engine/scoring.py: place = 1 + the number of
+  // strictly better scores (ties share a place), and tied entries split the AVERAGE of the table values for the
+  // places they span (two tied for 4th get (table[4] + table[5]) / 2 each).
+  function weeklyPoints(entries, table) {
+    const out = {};
+    entries.forEach((e) => { out[e.id] = { place: 1 + entries.filter((o) => o.score > e.score).length }; });
+    const groups = {};
+    entries.forEach((e) => { (groups[out[e.id].place] = groups[out[e.id].place] || []).push(e.id); });
+    Object.keys(groups).forEach((pl) => {
+      const place = Number(pl), ids = groups[pl];
+      let sum = 0;
+      for (let i = 0; i < ids.length; i++) sum += table[place + i] || 0;
+      ids.forEach((id) => { out[id].points = sum / ids.length; });
+    });
+    return out;
+  }
+
+  // rows:  buildNeed(...).rows (each has handle, overall, majors, seg1..seg3 and rank_* for the OFFICIAL standings)
+  // live:  the public live_status.json {entrants:[{dk_handle, points}], point_type, segment, is_major}
+  // aliases: lowercase DK handle spelling -> the roster's canonical handle
+  // Returns, per league member, projected points / rank per race, rank change vs official, and this week's points.
+  function projectStandings(rows, live, tables, aliases) {
+    const table = tables[live.point_type] || tables["600"];
+    const byHandle = new Map(rows.map((r) => [r.handle.toLowerCase(), r]));
+    const resolve = (h) => {
+      const k = String(h || "").toLowerCase();
+      return byHandle.get(String((aliases && aliases[k]) || k).toLowerCase()) || null;
+    };
+    const matched = [], unmatched = [];
+    (live.entrants || []).forEach((e) => {
+      const r = resolve(e.dk_handle);
+      if (r) matched.push({ id: r.handle, score: e.points, name: r.name });
+      else unmatched.push(e.dk_handle);
+    });
+    const wk = weeklyPoints(matched, table);
+    const seg = live.segment ? "seg" + live.segment : null;
+    const counts = (m) => m === "overall" || (m === "majors" && !!live.is_major) || m === seg;
+
+    const races = ["overall", "majors", "seg1", "seg2", "seg3"];
+    const out = rows.map((r) => ({ handle: r.handle, name: r.name, weekPlace: wk[r.handle] ? wk[r.handle].place : null, weekPts: wk[r.handle] ? wk[r.handle].points : 0, pts: {}, rank: {}, delta: {}, week: {} }));
+    races.forEach((m) => {
+      rows.forEach((r, i) => { out[i].week[m] = counts(m) ? out[i].weekPts : 0; out[i].pts[m] = r[m] + out[i].week[m]; });
+      const ranks = excelRank(out.map((o) => o.pts[m]));
+      out.forEach((o, i) => { o.rank[m] = ranks[i]; o.delta[m] = rows[i]["rank_" + m] - ranks[i]; });   // positive = moved up
+    });
+    return { rows: out, matched: matched.length, unmatched, table };
+  }
+  /*PROJ-CALC-END*/
+
 
   // Minimal HTML escaper for anything that comes from a data file at runtime.
   function esc(s) {
@@ -1847,13 +1954,28 @@
   let activeMetric = "overall";
   let expanded = false;
 
+  // Live projected standings. `projection` is filled in by the live-data code (null whenever no tournament is live);
+  // `projectedMode` is on while the red LIVE button is pressed (URL: #/live).
+  let projection = null;
+  let projectedMode = false;
+  const PROJ_KEY = { overall: "overall", majors: "majors", segment1: "seg1", segment2: "seg2", segment3: "seg3" };
+
   function renderBoard() {
     const m = METRICS[activeMetric];
-    const sorted = [...STANDINGS].sort((a, b) => a[m.rank] - b[m.rank]);
-    const leaderPts = sorted[0][m.pts];
+    const proj = projectedMode && projection ? new Map(projection.rows.map((r) => [r.handle, r])) : null;
+    const pk = PROJ_KEY[activeMetric];
+    // one normalised row per player: the official numbers, or the projected ones while the LIVE view is on
+    const sorted = STANDINGS.map((p, idx) => {
+      const r = proj ? proj.get(p.dk_handle) : null;
+      return r ? { p, idx, rank: r.rank[pk], pts: r.pts[pk], delta: r.delta[pk], week: r.week[pk] }
+               : { p, idx, rank: p[m.rank], pts: p[m.pts], delta: null, week: null };
+    }).sort((a, b) => a.rank - b.rank || a.idx - b.idx);
+    const colBack = document.querySelector(".board-cols .c-back");
+    if (colBack) colBack.textContent = proj ? "This week" : "Back";
+    const leaderPts = sorted[0].pts;
     const q = (document.getElementById("search")?.value || "").trim().toLowerCase();
     const list = q
-      ? sorted.filter((p) => p.name.toLowerCase().includes(q) || p.dk_handle.toLowerCase().includes(q))
+      ? sorted.filter((it) => it.p.name.toLowerCase().includes(q) || it.p.dk_handle.toLowerCase().includes(q))
       : sorted;
     board.innerHTML = "";
     if (!list.length) {
@@ -1861,22 +1983,29 @@
       return;
     }
 
-    list.forEach((p, i) => {
+    list.forEach((it, i) => {
+      const p = it.p;
       const row = document.createElement("div");
-      const isLead = p[m.rank] === 1;
+      const isLead = it.rank === 1;
       row.className = "row clickable" + (isLead ? " lead" : "") + (!q && !expanded && i >= VISIBLE ? " hidden" : "");
       row.setAttribute("tabindex", "0");
       row.setAttribute("role", "button");
       row.setAttribute("aria-label", `View ${p.name}'s season`);
-      const trendArrow = p._trend ? `<span class="trend ${p._trend}">${p._trend === "up" ? "&#9650;" : "&#9660;"}</span>` : "";
+      // official view: season-form arrow; projected view: how many places they'd move vs the official standings
+      const trendArrow = proj
+        ? (it.delta > 0 ? `<span class="trend up">&#9650;${it.delta}</span>` : it.delta < 0 ? `<span class="trend down">&#9660;${-it.delta}</span>` : "")
+        : (p._trend ? `<span class="trend ${p._trend}">${p._trend === "up" ? "&#9650;" : "&#9660;"}</span>` : "");
+      const backCell = proj
+        ? `<div class="back${it.week > 0 ? " gain" : ""}">${it.week > 0 ? "+" + fmtPts(it.week) : "&ndash;"}</div>`
+        : `<div class="back${isLead ? " leader" : ""}">${isLead ? "Leader" : "-" + fmtPts(leaderPts - it.pts)}</div>`;
       row.innerHTML = `
-        <div class="rank">${p[m.rank]}</div>
+        <div class="rank">${it.rank}</div>
         <div class="who">
           <span class="name"><span class="nm">${p.name}</span>${trophyHtml(p.dk_handle)}</span>
           <span class="handle">${p.dk_handle}</span>
         </div>
-        <div class="pts-wrap">${trendArrow}<div class="pts">${fmtPts(p[m.pts])}</div></div>
-        <div class="back${isLead ? " leader" : ""}">${isLead ? "Leader" : "-" + fmtPts(leaderPts - p[m.pts])}</div>
+        <div class="pts-wrap">${trendArrow}<div class="pts">${fmtPts(it.pts)}</div></div>
+        ${backCell}
       `;
       row.addEventListener("click", () => openSheet(p));
       row.addEventListener("keydown", (e) => {
@@ -2235,7 +2364,9 @@
     function route() {
       const parts = location.hash.replace(/^#\/?/, "").split("/");
       const view = parts[0] === "week" ? "week" : parts[0] === "schedule" ? "schedule" : parts[0] === "need" ? "need" : parts[0] === "recap" ? "recap" : "standings";
+      projectedMode = parts[0] === "live";      // #/live = the standings page in projected (LIVE) mode
       showView(view);
+      refreshProjection();
       if (view === "need") showNeed(parts[1] ? decodeURIComponent(parts[1]) : null);
       if (view === "recap") showRecap(parts[1] ? decodeURIComponent(parts[1]) : null);
       if (parts[0] === "player" && parts[1]) {
@@ -2283,7 +2414,50 @@
       liveLoaded = true;
       renderWeek();
       renderStatusChip();
+      refreshProjection();
     }
+
+    // The red LIVE button + projected standings. Available only while a tournament is being scored, after lineups
+    // lock, and only if the official data doesn't already include that week (otherwise it would be counted twice).
+    function refreshProjection() {
+      const btn = document.getElementById("liveBtn");
+      const bar = document.getElementById("projBar");
+      const d = liveData;
+      const alreadyOfficial = d && d.event_key && STANDINGS.some((p) => p.events.some((e) => e.key === d.event_key && e.played));
+      const usable = !!(d && d.locked && d.entrants && d.entrants.length && !alreadyOfficial);
+      if (!usable) {
+        projection = null;
+        if (liveLoaded) projectedMode = false;   // before the first load, keep a #/live link pending instead of dropping it
+        document.getElementById("boardTitle").textContent = "Final Standings";
+        btn.hidden = true;
+        bar.hidden = true;
+        renderBoard();
+        return;
+      }
+      projection = projectStandings(NEED.rows, d, POINT_TABLES, ROSTER_ALIASES);
+      document.getElementById("boardTitle").textContent = projectedMode ? "Projected Standings" : "Final Standings";
+      const s = liveStatus(d, Date.now(), lastFetchFailed);
+      btn.hidden = false;
+      btn.className = "live-btn " + (s.tone === "final" ? "final" : s.tone === "live" ? "" : "delayed") + (projectedMode ? " pressed" : "");
+      btn.setAttribute("aria-pressed", String(projectedMode));
+      btn.innerHTML = '<span class="dot"></span>' + (s.tone === "final" ? "FINAL" : s.tone === "live" ? "LIVE" : "LIVE &middot; DELAYED");
+      btn.title = projectedMode ? "Back to the official standings" : "See the projected standings";
+      bar.hidden = !projectedMode;
+      if (projectedMode) {
+        const members = projection.matched, total = STANDINGS.length;
+        bar.innerHTML = '<div class="proj-title"><span class="dot"></span>PROJECTED STANDINGS</div>' +
+          "<div><b>If the week ended right now.</b> " + esc(d.event) + (d.detail ? " &middot; " + esc(d.detail) : "") +
+          " &middot; updated " + esc(ago(d.updated_at)) + ". These numbers move as the tournament does; the official standings update after DraftKings posts results.</div>" +
+          '<div class="proj-note">' + members + " of " + total + " league members have a lineup this week; everyone else keeps their current total." +
+          (projection.unmatched.length ? " Not in the league: " + esc(projection.unmatched.join(", ")) + "." : "") +
+          (s.tone === "stale" || s.tone === "offline" ? " Scores may be delayed." : "") + "</div>" +
+          '<button class="proj-back" id="projBack" type="button">Back to official standings</button>';
+        document.getElementById("projBack").addEventListener("click", () => { location.hash = "#/"; });
+      }
+      renderBoard();
+    }
+
+    document.getElementById("liveBtn").addEventListener("click", () => { location.hash = projectedMode ? "#/" : "#/live"; });
 
     // Header chip: live / delayed / offline / final. Re-rendered every 30 s so "3 min ago" keeps counting
     // between refreshes (decision logic: liveStatus(), unit-tested).

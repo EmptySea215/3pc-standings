@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 
 from engine.dk_scoring import (
     ALL_ROUNDS_UNDER_70_BONUS,
+    STREAK_BONUS,
     PLACEMENT_BONUS,
     hole_points,
     round_points,
@@ -202,24 +203,55 @@ def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
 
 
 def partial_round_points(scores: list[int], pars: list[int]) -> float:
-    """Per-hole points only (no round bonuses) for an unfinished round."""
-    return sum(hole_points(s, p) for s, p in zip(scores, pars))
+    """Points for an unfinished round: every hole played so far, plus the birdie-streak bonus the moment it's
+    earned (DraftKings pays +3 for 3 or more birdies-or-better in a row as soon as it happens, max once a round).
+    The bogey-free bonus can't be known until the 18th hole, so it is NOT included."""
+    pts = sum(hole_points(s, p) for s, p in zip(scores, pars))
+    run = best = 0
+    for s, p in zip(scores, pars):
+        run = run + 1 if s - p <= -1 else 0
+        best = max(best, run)
+    if best >= 3:
+        pts += STREAK_BONUS
+    return pts
+
+
+def live_places(golfers: list[GolferResult], period: int | None) -> dict[str, int]:
+    """Current leaderboard place for every golfer in the running, mid-event.
+
+    DraftKings pays the placement bonus LIVE, on a golfer's current position (confirmed in the first live test:
+    Max Greyserman leading at -4 showed 17.5 hole points + 30 for 1st = 47.5). Same tie rule as the final scoring:
+    place = 1 + the number of golfers with a strictly better score-to-par, and everyone tied shares that place.
+    Golfers who haven't teed off yet, and golfers who have missed the cut (round 3+), are not in the running.
+    """
+    running = [g for g in golfers if g.to_par is not None and (g.rounds_complete > 0 or g.partial)
+               and not (period is not None and period >= 3 and g.rounds_complete <= 2 and not g.partial)]
+    return {g.name: 1 + sum(1 for o in running if o.to_par < g.to_par) for g in running}
 
 
 def golfer_points(g: GolferResult, place: int | None, final: bool) -> float:
-    """DK points for one golfer. Placement bonus only when the event is final."""
+    """DK points for one golfer. `place` is the final place when `final`, otherwise the CURRENT place (live)."""
     pts = sum(round_points(r["scores"], r["pars"]) for r in g.rounds)
     if g.partial:
         pts += partial_round_points(g.partial["scores"], g.partial["pars"])
-    if final and g.rounds_complete >= 4:
-        if all(sum(r["scores"]) < 70 for r in g.rounds):
-            pts += ALL_ROUNDS_UNDER_70_BONUS
-        if place is not None:
-            pts += PLACEMENT_BONUS.get(place, 0)
+    if final:
+        if g.rounds_complete >= 4:
+            if all(sum(r["scores"]) < 70 for r in g.rounds):
+                pts += ALL_ROUNDS_UNDER_70_BONUS
+            if place is not None:
+                pts += PLACEMENT_BONUS.get(place, 0)
+    elif place is not None:
+        pts += PLACEMENT_BONUS.get(place, 0)        # live: bonus for where the golfer stands right now
     return pts
 
 
 def event_points(result: dict) -> dict[str, float]:
-    """{golfer_name: DK points} for everyone in the feed."""
-    places = assign_places(result["golfers"])
+    """{golfer_name: DK points} for everyone in the feed.
+
+    Final events use the final tied places; events in progress use live places (see live_places), because
+    that's what DraftKings shows on its leaderboard and what the 3PC projection should mirror."""
+    if result["final"]:
+        places = assign_places(result["golfers"])
+    else:
+        places = live_places(result["golfers"], result.get("period"))
     return {g.name: golfer_points(g, places.get(g.name), result["final"]) for g in result["golfers"]}

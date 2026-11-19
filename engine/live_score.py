@@ -90,9 +90,14 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
             "computed_golfer_fpts": golfer_fpts}
 
 
-def build_status(result: dict, entrants: list[dict], week_key: str | None = None) -> dict:
+#: describes how the week counts in the 3PC standings (from the lineups file); the site uses it to project standings
+META_KEYS = ("event_key", "point_type", "segment", "is_major")
+
+
+def build_status(result: dict, entrants: list[dict], week_key: str | None = None, meta: dict | None = None) -> dict:
     scored = score_entrants(result, entrants)
     return {
+        **{k: (meta or {}).get(k) for k in META_KEYS},
         "week_key": week_key,
         "event": result["name"],
         "event_id": result["event_id"],
@@ -107,7 +112,7 @@ def build_status(result: dict, entrants: list[dict], week_key: str | None = None
 
 
 PUBLIC_FIELDS = ("week_key", "event", "event_id", "state", "final", "round_in_progress",
-                 "detail", "updated_at", "field_size")
+                 "detail", "updated_at", "field_size", "event_key", "point_type", "segment", "is_major")
 
 
 def is_locked(locked_at: str | None, now: dt.datetime | None = None) -> bool:
@@ -188,13 +193,13 @@ def main(argv=None) -> int:
         if result["state"] == "pre" or not result["golfers"]:
             log(a.log, f"{result['name']}: not started / field not posted yet - nothing to do")
             if a.public_out:  # publish the harmless "waiting" state (never any lineup data)
-                waiting = {"week_key": cfg.get("week_key"), "event": result["name"],
+                waiting = {**{k: cfg.get(k) for k in META_KEYS}, "week_key": cfg.get("week_key"), "event": result["name"],
                            "event_id": result["event_id"], "state": "pre", "final": False,
                            "updated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
                 atomic_write_json(a.public_out, public_view(waiting, cfg.get("locked_at")))
             print("not started")
             return 0
-        status = build_status(result, entrants, cfg.get("week_key"))
+        status = build_status(result, entrants, cfg.get("week_key"), {k: cfg.get(k) for k in META_KEYS})
         errs = [f"{g.name}: {e}" for g in result["golfers"] for e in g.parse_errors]
         if errs:
             status["parse_errors"] = errs
