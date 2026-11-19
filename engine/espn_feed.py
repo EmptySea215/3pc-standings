@@ -187,6 +187,8 @@ def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> d
         "event_id": ev["id"],
         "name": ev["name"],
         "final": _is_final(ev_status, status),
+        # the round just finished but the tournament has not ("Round 1 - Play Complete"): the page says "Round 1 Final"
+        "round_complete": bool(status.get("completed")) and not _is_final(ev_status, status),
         # The EVENT's state, not the round's: between rounds the competition reads "post" but the tournament is still "in".
         "state": ev_status.get("state") or status.get("state"),   # pre | in | post
         "period": comp.get("status", {}).get("period"),     # round currently being played

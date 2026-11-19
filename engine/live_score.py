@@ -108,6 +108,7 @@ def build_status(result: dict, entrants: list[dict], week_key: str | None = None
         "event_id": result["event_id"],
         "state": result["state"],
         "final": result["final"],
+        "round_complete": bool(result.get("round_complete")),
         "round_in_progress": result.get("period"),
         "detail": result.get("detail"),
         "updated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
@@ -116,7 +117,7 @@ def build_status(result: dict, entrants: list[dict], week_key: str | None = None
     }
 
 
-PUBLIC_FIELDS = ("week_key", "event", "event_id", "state", "final", "round_in_progress",
+PUBLIC_FIELDS = ("week_key", "event", "event_id", "state", "final", "round_complete", "round_in_progress",
                  "detail", "updated_at", "field_size", "event_key", "point_type", "segment", "is_major")
 
 
