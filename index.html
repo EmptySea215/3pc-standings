@@ -747,6 +747,14 @@
 
   .sheet-stat-val { margin-top: 2px; font-size: 15px; font-weight: 600; }
 
+  /* the totals double as a race switcher: the one matching the tab you came from is highlighted */
+  button.sheet-stat { font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  button.sheet-stat:hover { border-color: var(--line-strong); }
+  .sheet-stat.active { background: var(--accent-soft); border-color: rgba(29, 78, 216, 0.45); }
+  .sheet-stat.active .sheet-stat-label, .sheet-stat.active .sheet-stat-val { color: var(--accent); }
+  .sheet-rank small { display: block; margin-top: 1px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+  .sheet-race { flex-shrink: 0; padding: 10px 20px 0; font-size: 12.5px; color: var(--ink-faint); }
+
   .sheet-chart { padding: 14px 20px 6px; flex-shrink: 0; }
   .sheet-chart svg { display: block; width: 100%; height: 46px; }
 
@@ -1669,6 +1677,7 @@
       <span><i style="background: var(--accent)"></i>Playoffs</span>
     </div>
   </div>
+  <div class="sheet-race" id="sheetRace"></div>
   <div class="sheet-events" id="sheetEvents"></div>
 </div>
 
@@ -1692,7 +1701,7 @@
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
 
   const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
-  const BUILD_TIME = "2026-11-19T18:21:53+00:00";        // when this page was generated (UTC)
+  const BUILD_TIME = "2026-11-19T18:52:51+00:00";        // when this page was generated (UTC)
   const TEST_EVENT = {"enabled": true, "key": "test", "name": "RSM - Test", "detail": "RSM Classic test contest", "date": "2026-11-19", "point_type": "600"};           // display-only test event shown first in the schedule (config/test_event.json), or null
   const ROSTER_ALIASES = {"dhixson43": "dhixson43", "kma93": "KMA93", "sahrane": "Sahrane", "childs83": "childs83", "dougraff": "dougraff", "buckeyenut27": "BuckeyeNut27", "ajbeckface": "AJBeckFace", "scamuso03": "SCamuso03", "jtroendly295": "Jtroendly295", "jfasano": "jfasano", "changeup31": "jfasano", "scolli87": "Scolli87", "mawillgolf": "mawillgolf", "bcassidy2": "bcassidy2", "walkerdb7": "walkerdb7", "actj": "actj", "flynny1088": "flynny1088", "clinnabary": "clinnabary", "asteg18": "asteg18", "proshoppete3317": "Proshoppete3317", "canes_56": "Canes_56", "mzwicky2014": "mzwicky2014", "mikegatti1": "mikegatti1", "3dirtysanchez3": "3dirtysanchez3", "ajsimon1": "AJSimon1", "shawn_bray10": "Shawn_bray10", "gregschultz25": "gregschultz25", "mhopple25": "MHopple25", "nkumar228": "Nkumar228", "huntertowell": "HunterTowell", "mawa": "Mawa", "karmeny1022": "Karmeny1022", "wrestlerboy15": "wrestlerboy15", "jodylee511": "Jodylee511", "smellsdigs": "Smellsdigs", "smellsdiggs": "Smellsdigs", "mpaquette311": "mpaquette311", "dawkman": "dawkman", "papernorm": "papernorm", "superman-71": "superman-71", "troubleball10": "troubleball10", "wellerm2": "Wellerm2", "g_zimm": "g_zimm", "rottensquash": "RottenSquash", "jrs6742001": "jrs6742001", "cdcollins213": "cdcollins213", "gmoney0710": "GMoney0710", "zocollin19932": "zocollin19932"};  // lowercase DK handle spelling -> roster handle (smellsdiggs -> Smellsdigs ...)
   const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};            // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
@@ -2124,6 +2133,17 @@
   }
   /*PROJ-CALC-END*/
 
+  /*RACE-CALC-START*/
+  // The events that count toward a race, for the player sheet (pure; unit-tested in Node).
+  // metric: "overall" (every event, playoffs included), "majors", or "segment1" / "segment2" / "segment3".
+  function eventsForRace(events, metric) {
+    if (metric === "majors") return events.filter((e) => !!e.is_major);
+    const m = /^segment(\d)$/.exec(metric || "");
+    if (m) return events.filter((e) => e.segment === Number(m[1]));
+    return events;
+  }
+  /*RACE-CALC-END*/
+
   /*ME-CALC-START*/
   // ---------- "This is me": one person's view of the standings (pure; unit-tested in Node) ----------
   // rows = buildNeed(...).rows (name, handle, overall, rank_overall); standings = per-event data; schedule = season order.
@@ -2426,11 +2446,11 @@
         <div class="pts-wrap">${trendArrow}${ptsCell}</div>
         ${backCell}
       `;
-      row.addEventListener("click", () => openSheet(p));
+      row.addEventListener("click", () => openSheet(p, activeMetric));      // the sheet follows the tab you are on
       row.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          openSheet(p);
+          openSheet(p, activeMetric);
         }
       });
       board.appendChild(row);
@@ -2541,6 +2561,10 @@
 
     let lastFocused = null;
     let currentPerson = null;
+    let currentMetric = "overall";                 // which race the sheet is showing: overall | majors | segment1..3
+    const elRace = document.getElementById("sheetRace");
+    const RACE_SHORT = { overall: "Overall", majors: "Majors", segment1: "Seg 1", segment2: "Seg 2", segment3: "Seg 3" };
+    const RACE_LONG = { overall: "All events", majors: "Majors + Players", segment1: "Segment 1", segment2: "Segment 2", segment3: "Segment 3" };
 
     function tagFor(ev) {
       if (ev.is_major) return { label: "Major", varName: "--gold" };
@@ -2548,16 +2572,16 @@
       return { label: `Segment ${ev.segment}`, varName: "--ink-dim" };
     }
 
-    function buildChart(person) {
-      const events = person.events;
+    function buildChart(events) {
       const max = Math.max(1, ...events.map((e) => e.points));
       const n = events.length;
       const gap = 1.6;
-      const barW = (300 - gap * (n - 1)) / n;
+      const barW = Math.min(24, (300 - gap * (n - 1)) / Math.max(n, 1));            // a handful of events get sensible bars, not slabs
+      const x0 = (300 - (n * barW + gap * (n - 1))) / 2;                              // ...centred
       let bars = "";
       events.forEach((ev, i) => {
         const h = (ev.points / max) * 40;
-        const x = i * (barW + gap);
+        const x = x0 + i * (barW + gap);
         const y = 44 - h;
         const tag = tagFor(ev);
         bars += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(h, 1).toFixed(2)}" rx="0.8" fill="var(${tag.varName})"><title>${ev.name}: ${fmtPts(ev.points)} pts</title></rect>`;
@@ -2565,9 +2589,10 @@
       chartSvg.innerHTML = bars;
     }
 
-    function buildEvents(person) {
+    function buildEvents(events) {
       elEvents.innerHTML = "";
-      person.events.forEach((ev) => {
+      if (!events.length) elEvents.innerHTML = '<div class="empty">No events in this race yet.</div>';
+      events.forEach((ev) => {
         const tag = tagFor(ev);
         const row = document.createElement("div");
         row.className = "sheet-event";
@@ -2592,29 +2617,43 @@
       });
     }
 
-    function openSheet(person) {
-      lastFocused = document.activeElement;
-      elRank.textContent = person.overall_rank;
+    // `metric` = the race the visitor came from (the standings tab, or a category list): the sheet then shows only that
+    // race's events, with that race's rank and points highlighted. Overall (the default) shows every event.
+    function openSheet(person, metric) {
+      metric = METRICS[metric] ? metric : "overall";
+      const wasOpen = sheet.classList.contains("open");
+      if (!wasOpen) lastFocused = document.activeElement;
+      const m = METRICS[metric];
+      const events = eventsForRace(person.events, metric);
+      currentMetric = metric;
+      elRank.innerHTML = person[m.rank] + (metric === "overall" ? "" : "<small>" + RACE_SHORT[metric] + "</small>");
+      elRank.title = RACE_SHORT[metric] + " rank";
       elName.innerHTML = '<span class="nm">' + esc(person.name) + "</span>" + trophyHtml(person.dk_handle);
       elHandle.textContent = person.dk_handle;
-      elTotals.innerHTML = `
-        <div class="sheet-stat"><div class="sheet-stat-label">Overall</div><div class="sheet-stat-val">${fmtPts(person.overall_points)}</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-label">Majors</div><div class="sheet-stat-val">${fmtPts(person.majors_points)}</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-label">Seg 1</div><div class="sheet-stat-val">${fmtPts(person.segment1_points)}</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-label">Seg 2</div><div class="sheet-stat-val">${fmtPts(person.segment2_points)}</div></div>
-        <div class="sheet-stat"><div class="sheet-stat-label">Seg 3</div><div class="sheet-stat-val">${fmtPts(person.segment3_points)}</div></div>
-      `;
-      buildChart(person);
-      buildEvents(person);
+      elTotals.innerHTML = Object.keys(RACE_SHORT).map((k) =>
+        `<button type="button" class="sheet-stat${k === metric ? " active" : ""}" data-metric="${k}" aria-pressed="${k === metric}">` +
+        `<div class="sheet-stat-label">${RACE_SHORT[k]}</div><div class="sheet-stat-val">${fmtPts(person[METRICS[k].pts])}</div></button>`).join("");
+      elRace.textContent = metric === "overall"
+        ? "All " + events.length + " events this season"
+        : RACE_LONG[metric] + ": " + events.length + " event" + (events.length === 1 ? "" : "s") + " · " + fmtPts(person[m.pts]) + " pts · ranked " + person[m.rank];
+      buildChart(events);
+      buildEvents(events);
+      elEvents.scrollTop = 0;
 
       backdrop.classList.add("open");
       sheet.classList.add("open");
       sheet.setAttribute("aria-hidden", "false");
       document.body.classList.add("sheet-open");
       currentPerson = person;
-      setHash("#/player/" + encodeURIComponent(person.dk_handle));
-      closeBtn.focus();
+      setHash("#/player/" + encodeURIComponent(person.dk_handle) + (metric === "overall" ? "" : "/" + metric));
+      if (!wasOpen) closeBtn.focus();
     }
+
+    // tap another total to flip the same sheet to that race
+    elTotals.addEventListener("click", (ev) => {
+      const b = ev.target.closest("[data-metric]");
+      if (b && currentPerson) openSheet(currentPerson, b.dataset.metric);
+    });
 
     function closeSheet() {
       backdrop.classList.remove("open");
@@ -2634,7 +2673,7 @@
 
     document.getElementById("sheetCopy").addEventListener("click", async (ev) => {
       if (!currentPerson) return;
-      const url = location.origin + location.pathname + "#/player/" + encodeURIComponent(currentPerson.dk_handle);
+      const url = location.origin + location.pathname + "#/player/" + encodeURIComponent(currentPerson.dk_handle) + (currentMetric === "overall" ? "" : "/" + currentMetric);
       const btn = ev.currentTarget;
       let ok = false;
       try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {
@@ -2699,13 +2738,13 @@
         `;
         row.addEventListener("click", () => {
           closeCategorySheet();
-          openSheet(p);
+          openSheet(p, metricKey);
         });
         row.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             closeCategorySheet();
-            openSheet(p);
+            openSheet(p, metricKey);
           }
         });
         categoryList.appendChild(row);
@@ -2790,7 +2829,7 @@
       if (view === "recap") showRecap(parts[1] ? decodeURIComponent(parts[1]) : null);
       if (parts[0] === "player" && parts[1]) {
         const p = byHandle.get(decodeURIComponent(parts[1]).toLowerCase());
-        if (p) window.openSheet(p);
+        if (p) window.openSheet(p, parts[2] || "overall");        // #/player/<handle>[/majors|/segment1..3]
       } else if (window.closeAnySheet) {
         window.closeAnySheet();
       }
