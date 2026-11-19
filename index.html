@@ -198,15 +198,6 @@
   }
 
   /* ---------- "This is me": the personal card on Standings ---------- */
-  .me-prompt {
-    margin: 0 0 16px; padding: 10px 14px; border: 1px dashed var(--line-strong); border-radius: 10px;
-    background: var(--surface); font-size: 14px; color: var(--ink-dim);
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  .me-prompt button {
-    padding: 5px 12px; border: 1px solid rgba(29, 78, 216, 0.35); border-radius: 8px; background: var(--accent-soft);
-    color: var(--accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  }
   .me-card {
     margin: 0 0 16px; padding: 14px 16px; background: var(--surface);
     border: 1px solid var(--line); border-radius: 12px; box-shadow: inset 3px 0 0 var(--gold);
@@ -1178,6 +1169,29 @@
   .need-card p b { color: var(--ink); font-weight: 600; }
   .need-card .fine { font-size: 12.5px; color: var(--ink-faint); }
 
+  /* race tabs on What I need (Overall / Majors / Segments), same look as the standings tabs */
+  .need-tabs {
+    display: flex; gap: 2px; overflow-x: auto; padding: 0 10px; margin-bottom: 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px; scrollbar-width: none;
+  }
+  .need-tabs::-webkit-scrollbar { display: none; }
+  .need-tab {
+    flex-shrink: 0; padding: 12px 12px 11px; background: transparent; border: none; border-bottom: 2px solid transparent;
+    color: var(--ink-dim); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+  }
+  .need-tab:hover { color: var(--ink); }
+  .need-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .need-tab:focus-visible { outline-offset: -2px; }
+
+  /* the one-liner under each target */
+  .need-card p.need-quip {
+    margin: 10px 0 0; padding: 8px 12px; border-left: 3px solid var(--line-strong); border-radius: 0 8px 8px 0;
+    background: var(--surface-2); font-size: 14.5px; font-style: italic; line-height: 1.5; color: var(--ink);
+  }
+  .need-card p.need-quip.good { border-left-color: var(--good); background: rgba(31, 122, 77, 0.07); }
+  .need-card p.need-quip.bad { border-left-color: var(--bad); background: rgba(192, 57, 43, 0.06); }
+  .need-card p.need-quip.warn { border-left-color: var(--gold); background: rgba(154, 106, 8, 0.07); }
+
   .pill {
     display: inline-block;
     padding: 2px 9px;
@@ -1450,7 +1464,6 @@
     <p>Private league &middot; 46 entries &middot; one DraftKings lineup a week. Tap a name for their full season.</p>
   </div>
 
-  <div id="meBanner"></div>
   <div id="recapBanner"></div>
 
   <div class="layout">
@@ -1591,7 +1604,7 @@
 <div data-view="need" hidden>
   <div class="page-head">
     <h1>What do I need?</h1>
-    <p>Pick a player to see how far they are from the top 10 or the podium, and how many points are still on the table.</p>
+    <p>Your numbers, race by race: where you stand, what it takes, and what is still on the table.</p>
   </div>
   <div class="need-wrap">
     <div class="panel">
@@ -1673,7 +1686,7 @@
   const POINT_TABLES = {"600": {"1": 125, "2": 75, "3": 50, "4": 45, "5": 40, "6": 36, "7": 33, "8": 30, "9": 27, "10": 25, "11": 22, "12": 19, "13": 17, "14": 14, "15": 12, "16": 10, "17": 8, "18": 6, "19": 4, "20": 2}, "650": {"1": 135, "2": 80, "3": 53, "4": 48, "5": 42, "6": 38, "7": 35, "8": 32, "9": 30, "10": 27, "11": 24, "12": 21, "13": 19, "14": 16, "15": 14, "16": 12, "17": 9, "18": 7, "19": 5, "20": 3}, "700": {"1": 145, "2": 85, "3": 56, "4": 50, "5": 45, "6": 40, "7": 37, "8": 34, "9": 32, "10": 29, "11": 26, "12": 23, "13": 21, "14": 18, "15": 16, "16": 14, "17": 11, "18": 8, "19": 6, "20": 4}, "playoff_fedex": {"1": 300, "2": 225, "3": 150, "4": 110, "5": 85, "6": 75, "7": 60, "8": 50, "9": 40, "10": 30, "11": 25, "12": 20, "13": 15, "14": 10, "15": 5}, "playoff_bmw": {"1": 400, "2": 300, "3": 155, "4": 100, "5": 85, "6": 65, "7": 45, "8": 30, "9": 15, "10": 5}, "playoff_tour": {"1": 500, "2": 375, "3": 200, "4": 75, "5": 50}};
 
   const SEASON_SCHEDULE = [{"key": "wm", "name": "Waste Management", "date": "2026-02-05", "segment": 1, "point_type": "600", "is_major": null}, {"key": "att", "name": "AT&T Pebble Beach", "date": "2026-02-12", "segment": 1, "point_type": "650", "is_major": null}, {"key": "genesis", "name": "Genesis Invitational", "date": "2026-02-19", "segment": 1, "point_type": "650", "is_major": null}, {"key": "cognizant", "name": "Cognizant Classic", "date": "2026-02-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "arnold_palmer", "name": "Arnold Palmer Invitational", "date": "2026-03-05", "segment": 1, "point_type": "650", "is_major": null}, {"key": "players", "name": "The Players Championship", "date": "2026-03-12", "segment": 1, "point_type": "700", "is_major": true}, {"key": "valspar", "name": "Valspar Championship", "date": "2026-03-19", "segment": 1, "point_type": "600", "is_major": null}, {"key": "texas_childrens", "name": "Texas Children's Houston Open", "date": "2026-03-26", "segment": 1, "point_type": "600", "is_major": null}, {"key": "valero", "name": "Valero Texas Open", "date": "2026-04-02", "segment": 1, "point_type": "600", "is_major": null}, {"key": "masters", "name": "Masters", "date": "2026-04-09", "segment": 2, "point_type": "700", "is_major": true}, {"key": "rbc_heritage", "name": "RBC Heritage", "date": "2026-04-16", "segment": 2, "point_type": "650", "is_major": null}, {"key": "zurich", "name": "Zurich Classic", "date": "2026-04-23", "segment": 2, "point_type": "600", "is_major": null}, {"key": "cadillac", "name": "Cadillac Championship", "date": "2026-04-30", "segment": 2, "point_type": "650", "is_major": null}, {"key": "truist", "name": "Truist Championship", "date": "2026-05-07", "segment": 2, "point_type": "650", "is_major": null}, {"key": "pga_championship", "name": "PGA Championship", "date": "2026-05-14", "segment": 2, "point_type": "700", "is_major": true}, {"key": "cj_cup", "name": "CJ Cup Byron Nelson", "date": "2026-05-21", "segment": 2, "point_type": "600", "is_major": null}, {"key": "charles_schwab", "name": "Charles Schwab Challenge", "date": "2026-05-28", "segment": 2, "point_type": "600", "is_major": null}, {"key": "memorial", "name": "The Memorial", "date": "2026-06-04", "segment": 2, "point_type": "650", "is_major": null}, {"key": "rbc_canadian", "name": "RBC Canadian Open", "date": "2026-06-11", "segment": 3, "point_type": "600", "is_major": null}, {"key": "us_open", "name": "US Open", "date": "2026-06-18", "segment": 3, "point_type": "700", "is_major": true}, {"key": "travelers", "name": "Travelers Championship", "date": "2026-06-25", "segment": 3, "point_type": "650", "is_major": null}, {"key": "john_deere", "name": "John Deere Classic", "date": "2026-07-02", "segment": 3, "point_type": "600", "is_major": null}, {"key": "genesis_scottish", "name": "Genesis Scottish Open", "date": "2026-07-09", "segment": 3, "point_type": "600", "is_major": null}, {"key": "open_championship", "name": "Open Championship", "date": "2026-07-16", "segment": 3, "point_type": "700", "is_major": true}, {"key": "3m", "name": "3M Open", "date": "2026-07-23", "segment": 3, "point_type": "600", "is_major": null}, {"key": "rocket", "name": "Rocket Classic", "date": "2026-07-30", "segment": 3, "point_type": "600", "is_major": null}, {"key": "wyndham", "name": "Wyndham Championship", "date": "2026-08-06", "segment": 3, "point_type": "600", "is_major": null}, {"key": "fedex_st_jude", "name": "FedEx St. Jude Championship", "date": "2026-08-11", "segment": "playoffs", "point_type": "playoff_fedex", "is_major": null}, {"key": "bmw", "name": "BMW Championship", "date": "2026-08-18", "segment": "playoffs", "point_type": "playoff_bmw", "is_major": null}, {"key": "tour_championship", "name": "Tour Championship", "date": "2026-08-25", "segment": "playoffs", "point_type": "playoff_tour", "is_major": null}];
-  const BUILD_TIME = "2026-11-19T18:00:36+00:00";        // when this page was generated (UTC)
+  const BUILD_TIME = "2026-11-19T18:13:14+00:00";        // when this page was generated (UTC)
   const TEST_EVENT = {"enabled": true, "key": "test", "name": "RSM - Test", "detail": "RSM Classic test contest", "date": "2026-11-19", "point_type": "600"};           // display-only test event shown first in the schedule (config/test_event.json), or null
   const ROSTER_ALIASES = {"dhixson43": "dhixson43", "kma93": "KMA93", "sahrane": "Sahrane", "childs83": "childs83", "dougraff": "dougraff", "buckeyenut27": "BuckeyeNut27", "ajbeckface": "AJBeckFace", "scamuso03": "SCamuso03", "jtroendly295": "Jtroendly295", "jfasano": "jfasano", "changeup31": "jfasano", "scolli87": "Scolli87", "mawillgolf": "mawillgolf", "bcassidy2": "bcassidy2", "walkerdb7": "walkerdb7", "actj": "actj", "flynny1088": "flynny1088", "clinnabary": "clinnabary", "asteg18": "asteg18", "proshoppete3317": "Proshoppete3317", "canes_56": "Canes_56", "mzwicky2014": "mzwicky2014", "mikegatti1": "mikegatti1", "3dirtysanchez3": "3dirtysanchez3", "ajsimon1": "AJSimon1", "shawn_bray10": "Shawn_bray10", "gregschultz25": "gregschultz25", "mhopple25": "MHopple25", "nkumar228": "Nkumar228", "huntertowell": "HunterTowell", "mawa": "Mawa", "karmeny1022": "Karmeny1022", "wrestlerboy15": "wrestlerboy15", "jodylee511": "Jodylee511", "smellsdigs": "Smellsdigs", "smellsdiggs": "Smellsdigs", "mpaquette311": "mpaquette311", "dawkman": "dawkman", "papernorm": "papernorm", "superman-71": "superman-71", "troubleball10": "troubleball10", "wellerm2": "Wellerm2", "g_zimm": "g_zimm", "rottensquash": "RottenSquash", "jrs6742001": "jrs6742001", "cdcollins213": "cdcollins213", "gmoney0710": "GMoney0710", "zocollin19932": "zocollin19932"};  // lowercase DK handle spelling -> roster handle (smellsdiggs -> Smellsdigs ...)
   const CHAMPS = {"ajbeckface": 2, "dhixson43": 1, "jfasano": 1, "scamuso03": 1, "smellsdigs": 1, "mawa": 1};            // dk handle (lowercase) -> number of 3-Putt Cup titles (config/past_champions.json)
@@ -2078,42 +2091,45 @@
   /*ME-CALC-START*/
   // ---------- "This is me": one person's view of the standings (pure; unit-tested in Node) ----------
   // rows = buildNeed(...).rows (name, handle, overall, rank_overall); standings = per-event data; schedule = season order.
-  function buildMe(standings, rows, schedule, handle) {
+  // `metric` is the race: "overall" (default), "majors", "seg1", "seg2" or "seg3" (the same keys buildNeed uses).
+  function buildMe(standings, rows, schedule, handle, metric) {
+    metric = metric || "overall";
+    const counts = (ev) => metric === "overall" || (metric === "majors" ? !!ev.is_major : ev.segment === Number(metric.slice(3)));
     const key = String(handle || "").toLowerCase();
     const idx = rows.findIndex((r) => r.handle.toLowerCase() === key);
     if (idx < 0) return null;
     const me = rows[idx];
     const byKey = standings.map((p) => { const m = {}; p.events.forEach((e) => { m[e.key] = e; }); return m; });
 
-    // "Last week" = the most recent event anyone played; everyone's previous standing is the season minus that event.
+    // "Last week" = the most recent event in this race that anyone played; everyone's previous standing is the race minus that event.
     let last = null;
     for (let i = schedule.length - 1; i >= 0 && !last; i--) {
       const k = schedule[i].key;
-      if (standings.some((p, j) => byKey[j][k] && byKey[j][k].played)) last = schedule[i];
+      if (counts(schedule[i]) && standings.some((p, j) => byKey[j][k] && byKey[j][k].played)) last = schedule[i];
     }
     const ev = last ? byKey[idx][last.key] : null;
     let prevRank = null, rankDelta = null;
     if (last) {
-      const prev = rows.map((r, j) => r.overall - (((byKey[j][last.key] || {}).points) || 0));
+      const prev = rows.map((r, j) => r[metric] - (((byKey[j][last.key] || {}).points) || 0));
       if (prev.some((v) => v > 0)) {                    // nothing before the first event, so no "change" to report
         prevRank = excelRank(prev)[idx];
-        rankDelta = prevRank - me.rank_overall;         // positive = moved up
+        rankDelta = prevRank - me["rank_" + metric];    // positive = moved up
       }
     }
 
-    const pts = me.overall;
-    const higher = rows.filter((r) => r.overall > pts), lower = rows.filter((r) => r.overall < pts);
-    const nearest = (arr, pick) => { if (!arr.length) return null; const v = pick(arr.map((r) => r.overall)); return { value: v, names: arr.filter((r) => r.overall === v).map((r) => r.name) }; };
+    const pts = me[metric];
+    const higher = rows.filter((r) => r[metric] > pts), lower = rows.filter((r) => r[metric] < pts);
+    const nearest = (arr, pick) => { if (!arr.length) return null; const v = pick(arr.map((r) => r[metric])); return { value: v, names: arr.filter((r) => r[metric] === v).map((r) => r.name) }; };
     const upN = nearest(higher, (a) => Math.min(...a)), downN = nearest(lower, (a) => Math.max(...a));
-    const sorted = rows.map((r) => r.overall).sort((a, b) => b - a);
+    const sorted = rows.map((r) => r[metric]).sort((a, b) => b - a);
     const leaderPts = sorted[0];
-    const cutoff = sorted.length >= 10 ? sorted[9] : null;           // 10th-best total: at or above = top 10 (ties share a place)
+    const cutoff = metric === "overall" && sorted.length >= 10 ? sorted[9] : null;   // 10th-best total: at or above = top 10 (ties share a place)
     const firstOut = sorted.length > 10 ? sorted[10] : null;
 
     return {
-      name: me.name, handle: me.handle, entries: rows.length,
-      rank: me.rank_overall, points: pts,
-      tiedWith: rows.filter((r, j) => j !== idx && r.rank_overall === me.rank_overall).length,
+      name: me.name, handle: me.handle, entries: rows.length, metric: metric,
+      rank: me["rank_" + metric], points: pts,
+      tiedWith: rows.filter((r, j) => j !== idx && r["rank_" + metric] === me["rank_" + metric]).length,
       prevRank: prevRank, rankDelta: rankDelta,
       last: last ? { key: last.key, name: last.name, played: !!(ev && ev.played), place: ev ? ev.place : null, points: ev ? ev.points : 0, raw: ev ? ev.raw_points : null } : null,
       up: upN ? { names: upN.names, points: upN.value, gap: upN.value - pts } : null,
@@ -2123,6 +2139,92 @@
     };
   }
   /*ME-CALC-END*/
+
+  /*QUIP-CALC-START*/
+  // ---------- "What I need": how long someone has been mathematically dead + the commentary that goes with it ----------
+  // (pure; unit-tested in Node; needs buildNeed() and analyze() from NEED-CALC)
+  function hash32(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+  // Events (weeks) that have gone by since this entry became unable to reach Nth place or better in `metric`, even with
+  // every remaining point. null = not eliminated. 0 = the latest event is what eliminated them. Walks the season backwards,
+  // rewinding with buildNeed(asOf). Once eliminated you stay eliminated (your best case never rises, rivals' totals never fall).
+  // `cache` (optional object) remembers the rewound seasons so several targets/races don't rebuild them.
+  function deadWeeks(standings, schedule, tables, need, metric, handle, N, cache) {
+    const key = String(handle || "").toLowerCase();
+    const rowOf = (nd) => nd.rows.find((r) => r.handle.toLowerCase() === key);
+    const now = rowOf(need);
+    if (!now || !analyze(need, metric, now, N).eliminated) return null;
+    const occurred = schedule.filter((ev) => !need.remaining.some((r) => r.key === ev.key)).map((ev) => ev.key);
+    let first = occurred.length - 1;
+    for (let i = occurred.length - 2; i >= 0; i--) {
+      const nd = cache && cache[occurred[i]] ? cache[occurred[i]] : buildNeed(standings, schedule, tables, { asOf: occurred[i] });
+      if (cache) cache[occurred[i]] = nd;
+      const r = rowOf(nd);
+      if (r && analyze(nd, metric, r, N).eliminated) first = i; else break;
+    }
+    return occurred.length - 1 - first;
+  }
+
+  // All the commentary lives here so it is easy to edit. Tokens: {n} weeks dead, {gap} points behind, {cushion} points clear.
+  const QUIPS = {
+    notstarted: ["Nobody has a point yet, so everybody is a contender. Enjoy it while it lasts.",
+      "Clean slate. Nothing to brag about, nothing to be embarrassed by. Yet."],
+    won: ["It's yours. Go buy a round.", "Done and dusted. Screenshot this and put it on the fridge."],
+    lost: ["It's over, and this one got away. There's always the next one.", "That one's in the books. It went to someone else, and the math isn't arguing."],
+    nearmiss: ["Missed it by {gap}. Go ahead and replay every putt.", "{gap} short. That's a lot of 3-putts to think about."],
+    clinched: ["Locked up. Nobody can catch you. Still set a lineup, the rest of us are still playing.", "Clinched it. Frame this page."],
+    dead0: ["Mathematically dead as of this week. Time of death: whenever that last putt missed.",
+      "The math just closed the door. Don't take it personally. Take it a little personally."],
+    dead1: ["You've been dead for a week now. Nobody had the heart to tell you.",
+      "One week dead. The lineups keep coming anyway, which is honestly kind of beautiful."],
+    dead: ["A new outlook on life, brotha: you've been dead for {n} weeks now.",
+      "{n} weeks of being mathematically dead. Somebody check for a pulse.",
+      "Rest in peace. Dead for {n} weeks and still setting lineups. Respect."],
+    deadLong: ["Dead for {n} weeks. At this point it's a lifestyle.", "{n} weeks dead. The math sent flowers a long time ago."],
+    leading: ["Top of the heap. Everybody behind you is hunting you, so don't get cute.",
+      "You're the one they're chasing. Try to look comfortable."],
+    slim: ["Hanging on by {cushion}. Sweat it out.", "{cushion} of cushion. That's one bad week from gone."],
+    safe: ["In position. Keep it boring and keep the lineup sane.", "You're in good shape. Don't do anything heroic."],
+    within: ["Right in the mix. {gap} back, and a good week or two fixes it.", "Within striking distance. Eyes up."],
+    stretch: ["Needs a heater: {gap} back with the clock running. Possible. Not likely. Not nothing.",
+      "You'd need a few big weeks in a row. Make them count."],
+    long: ["Long shot. Buy the lottery ticket, set a strong lineup, and don't tell anyone you're still alive.",
+      "The odds are bad. The math says not dead, and that's all you've got."],
+    miracle: ["A fucking miracle bro.", "You need an actual miracle, bro. Start praying to the golf gods.",
+      "Nine lives wouldn't be enough. Miracle territory, bro."],
+  };
+
+  // `a` = analyze(...) result for the target; ctx = { handle, deadWeeks }. Returns { state, text }.
+  function needQuip(a, ctx) {
+    ctx = ctx || {};
+    let state;
+    if (a.notStarted && !a.final) state = "notstarted";
+    else if (a.final) state = a.inside ? "won" : (a.gap != null && a.gap <= 10 ? "nearmiss" : "lost");
+    else if (a.clinched) state = "clinched";
+    else if (a.eliminated) {
+      const n = ctx.deadWeeks;
+      state = n == null || n === 0 ? "dead0" : n === 1 ? "dead1" : n >= 8 ? "deadLong" : "dead";
+    } else if (a.inside) {
+      state = a.rank === 1 ? "leading" : (a.cushion != null && a.remMax > 0 && a.cushion < a.remMax * 0.15) ? "slim" : "safe";
+    } else {
+      // Follow the same tier as the pill on the card (a.tier: how much faster than their own pace they would have to go), so
+      // the commentary never contradicts it. A "long" shot becomes a miracle when they would need half or more of everything left.
+      const f = a.remMax > 0 ? a.gap / a.remMax : Infinity;     // the share of everything still on the table that they would need
+      if (a.tier === "within") state = "within";
+      else if (a.tier === "stretch") state = "stretch";
+      else if (a.tier === "long") state = f >= 0.5 ? "miracle" : "long";
+      else state = f >= 0.6 ? "miracle" : f >= 0.35 ? "long" : f >= 0.15 ? "stretch" : "within";
+    }
+    const list = QUIPS[state];
+    const seed = hash32([ctx.handle || "", a.metric, a.N, state].join("|"));
+    const r1 = (x) => String(Math.round(x * 10) / 10);
+    const text = list[seed % list.length]
+      .replace(/\{n\}/g, String(ctx.deadWeeks == null ? 0 : ctx.deadWeeks))
+      .replace(/\{gap\}/g, a.gap == null ? "" : r1(a.gap) + " pts")
+      .replace(/\{cushion\}/g, a.cushion == null ? "" : r1(a.cushion) + " pts");
+    return { state: state, text: text };
+  }
+  /*QUIP-CALC-END*/
 
   /*OWN-CALC-START*/
   // ---------- Lineup ownership: who is on how many lineups (pure; unit-tested in Node) ----------
@@ -2648,7 +2750,7 @@
       projectedMode = parts[0] === "live";      // #/live = the standings page in projected (LIVE) mode
       showView(view);
       refreshProjection();
-      if (view === "need") showNeed(parts[1] ? decodeURIComponent(parts[1]) : null);
+      if (view === "need") showNeed(parts[1] ? decodeURIComponent(parts[1]) : null, parts[2] || null);
       if (view === "recap") showRecap(parts[1] ? decodeURIComponent(parts[1]) : null);
       if (parts[0] === "player" && parts[1]) {
         const p = byHandle.get(decodeURIComponent(parts[1]).toLowerCase());
@@ -2716,7 +2818,7 @@
         btn.hidden = true;
         bar.hidden = true;
         renderBoard();
-        renderMeBanner();
+        refreshNeedIfOpen();
         return;
       }
       projection = projectStandings(NEED.rows, d, POINT_TABLES, ROSTER_ALIASES);
@@ -2740,7 +2842,7 @@
         document.getElementById("projBack").addEventListener("click", () => { location.hash = "#/"; });
       }
       renderBoard();
-      renderMeBanner();
+      refreshNeedIfOpen();
     }
 
     // The Test row on the Schedule page: blinking red LIVE while the test event is being scored; click -> potential standings.
@@ -3052,7 +3154,11 @@
     const num = (x) => Number(x).toLocaleString(undefined, { maximumFractionDigits: 2 });
     const one = (x) => String(Math.round(x * 10) / 10);
 
-    function targetCard(title, a, me, note) {
+    // quip = { state, text } from needQuip() (only passed for the person looking at their own numbers)
+    const QUIP_TONE = { won: "good", clinched: "good", leading: "good", safe: "good", within: "good", notstarted: "", slim: "warn", stretch: "warn",
+      long: "warn", dead0: "bad", dead1: "bad", dead: "bad", deadLong: "bad", lost: "bad", nearmiss: "bad", miracle: "bad" };
+
+    function targetCard(title, a, me, note, quip) {
       const who = esc(me.name), p = fmtPts;
       let pill, text;
       if (a.notStarted && !a.final) {
@@ -3094,19 +3200,37 @@
           : "that&rsquo;s an edge of about <b>" + one(a.perEvent) + " pts per event</b> over " + esc(a.holder.name) + ".";
       }
       return '<div class="need-card"><h3>' + esc(title) + " " + pill + "</h3><p>" + text + "</p>" +
+        (quip ? '<p class="need-quip ' + (QUIP_TONE[quip.state] || "") + '">' + esc(quip.text) + "</p>" : "") +
         (note ? '<p class="fine">' + note + "</p>" : "") + "</div>";
     }
 
+    // The tab (race) being viewed: overall | majors | seg1 | seg2 | seg3, the same keys NEED uses. The commentary and the
+    // "you" wording only appear when you are looking at your own numbers.
+    let needHandle = "", needRace = "overall";
+    const needCache = {};                          // rewound seasons, shared by every dead-weeks lookup
+    const RACE_TABS = [["overall", "Overall"], ["majors", "Majors"], ["seg1", "Segment 1"], ["seg2", "Segment 2"], ["seg3", "Segment 3"]];
+    const RACE_PHRASE = { overall: "overall", majors: "in the Majors + Players", seg1: "in Segment 1", seg2: "in Segment 2", seg3: "in Segment 3" };
+    const needCounts = (m, ev) => m === "overall" || (m === "majors" ? !!ev.is_major : ev.segment === Number(m.slice(3)));
+    const isRaceKey = (k) => RACE_TABS.some((t) => t[0] === k);
+
+    function refreshNeedIfOpen() {
+      const v = document.querySelector('[data-view="need"]');
+      if (v && !v.hidden && needHandle) renderNeed(needHandle);
+    }
+
     function renderNeed(handle) {
+      needHandle = handle || "";
       const body = document.getElementById("needBody");
       const me = handle ? NEED.rows.find((r) => r.handle.toLowerCase() === handle.toLowerCase()) : null;
       if (!me) { body.innerHTML = '<div class="empty">Choose a player above to see what they need.</div>'; return; }
 
-      const a10 = analyze(NEED, "overall", me, 10);
-      const a3 = analyze(NEED, "overall", me, 3);
-      const a1 = analyze(NEED, "overall", me, 1);
+      const m = needRace;
+      const mine = !!ME && me.handle === ME;       // second-person wording and commentary only for yourself
       const done = NEED.remaining.length === 0;
       let html = "";
+
+      html += '<div class="need-tabs" role="tablist" aria-label="Race">' + RACE_TABS.map((t) =>
+        '<button type="button" class="need-tab' + (t[0] === m ? " active" : "") + '" role="tab" aria-selected="' + (t[0] === m) + '" data-race="' + t[0] + '">' + t[1] + "</button>").join("") + "</div>";
 
       if (asOfKey) {
         const ev = SEASON_SCHEDULE.find((e) => e.key === asOfKey);
@@ -3114,53 +3238,82 @@
       }
       if (done) html += '<div class="notice"><b>The season is complete.</b> These are the final results.</div>';
 
-      html += '<div class="panel"><div class="need-summary">' +
-        '<div><div class="k">Overall rank</div><div class="v">' + ord(me.rank_overall) + "</div></div>" +
-        '<div><div class="k">Points</div><div class="v">' + fmtPts(me.overall) + "</div></div>" +
-        '<div><div class="k">Events left</div><div class="v">' + NEED.remaining.length + "</div></div>" +
-        '<div><div class="k">Max still available</div><div class="v">' + num(NEED.remMax.overall) + "</div></div></div>";
-      if (a1.next) {
-        html += '<div class="prose" style="border-top:1px solid var(--line)">Next place up: <b>' + esc(a1.next.name) + "</b> (" + fmtPts(a1.next.overall) +
-          " pts), " + fmtPts(a1.nextGap) + " ahead.</div>";
+      // ---- you: where you stand in this race (the personal card that used to sit on Standings) ----
+      const occurredSchedule = SEASON_SCHEDULE.filter((ev) => !NEED.remaining.some((r) => r.key === ev.key));   // respects ?asof= previews
+      const s = buildMe(STANDINGS, NEED.rows, occurredSchedule, me.handle, m);
+      const notStarted = !NEED.playedCount || !NEED.playedCount[m];
+      const names = (a) => a.length === 1 ? esc(a[0]) : a.length === 2 ? esc(a[0]) + " &amp; " + esc(a[1]) : a.length + " players";
+      const delta = s.rankDelta == null ? "" : s.rankDelta > 0 ? '<span class="me-delta up">&#9650;' + s.rankDelta + "</span>"
+        : s.rankDelta < 0 ? '<span class="me-delta down">&#9660;' + (-s.rankDelta) + "</span>" : '<span class="me-delta" style="color:var(--ink-faint);font-weight:500">no change</span>';
+      const tiles = [];
+      if (s.last) tiles.push(["Last event &middot; " + esc(s.last.name), s.last.played && s.last.place ? ord(s.last.place) + " &middot; " + fmtPts(s.last.points) + " pts" : "Didn&rsquo;t play"]);
+      if (!notStarted) {
+        tiles.push(["Next place up", s.up ? names(s.up.names) + " <small>" + fmtPts(s.up.gap) + " pts ahead</small>" : "On top"]);
+        if (s.top10) tiles.push(["Top 10", s.top10.inside ? "In" + (s.top10.margin != null ? " <small>" + (s.top10.margin > 0 ? fmtPts(s.top10.margin) + " pts clear" : "level with 11th") + "</small>" : "") : fmtPts(s.top10.gap) + " pts to get in"]);
+        tiles.push(["Behind the leader", s.leader.isMe ? "You lead" : fmtPts(s.leader.gap) + " pts"]);
+      }
+      tiles.push(["Events left", String(NEED.remCount[m])]);
+      tiles.push(["Max still available", num(NEED.remMax[m])]);
+
+      const d = liveData;
+      const inLive = !!(d && d.locked && d.entrants && d.entrants.some((e) => resolveMe(e.dk_handle) === me.handle));
+      const liveCounts = !!d && (m === "overall" || (m === "majors" ? !!d.is_major : String(d.segment) === m.slice(3)));
+      const pr = projection ? projection.rows.find((r) => r.handle === me.handle) : null;
+      let live = "";
+      if (pr && d && inLive && liveCounts) {
+        const gain = pr.week[m], mv = pr.delta[m];
+        live = '<div class="me-live"><span class="dot"></span><b>Right now</b> &middot; ' + esc(d.event) + ": " +
+          (gain > 0 ? "<b>+" + fmtPts(gain) + " pts</b> would put " + (mine ? "you" : esc(firstName(me.name))) + " <b>" + ord(pr.rank[m]) + "</b>" + (mv ? " (" + (mv > 0 ? "&#9650;" : "&#9660;") + Math.abs(mv) + ")" : "") : "no points yet this week") +
+          ' &middot; <a href="#/live">see projected standings</a></div>';
+      } else if (mine && d && d.locked && d.entrants && d.entrants.length && !inLive && liveCounts) {
+        live = '<div class="meta-line" style="margin-top:12px">You don&rsquo;t have a lineup in ' + esc(d.event) + ".</div>";
+      }
+      html += '<div class="me-card" style="margin-top:0"><div class="me-hi">' + (mine ? "Hi, " + esc(firstName(me.name)) : "Player") + "</div>" +
+        '<div class="me-big">' + (notStarted ? esc(mine ? "Nothing to see yet" : me.name) + " <small>this race hasn&rsquo;t started</small>"
+          : (mine ? "" : esc(me.name) + " &middot; ") + ord(s.rank) + (s.tiedWith ? " (tied)" : "") + " <small>" + RACE_PHRASE[m] + " &middot; " + fmtPts(s.points) + " pts</small>" + delta) + "</div>" +
+        '<div class="me-grid">' + tiles.map((t) => '<div><div class="k">' + t[0] + '</div><div class="v">' + t[1] + "</div></div>").join("") + "</div>" + live +
+        '<div class="me-links"><a href="#/player/' + encodeURIComponent(me.handle) + '">' + (mine ? "My" : "Their") + " season &rarr;</a>" +
+        (inLive ? '<a href="#/week">' + (mine ? "My" : "Their") + " lineup this week &rarr;</a>" : "") + "</div></div>";
+
+      // ---- targets, with the commentary ----
+      const quipFor = (a) => !mine ? null : needQuip(a, { handle: me.handle,
+        deadWeeks: a.eliminated ? deadWeeks(STANDINGS, SEASON_SCHEDULE, POINT_TABLES, NEED, m, me.handle, a.N, needCache) : null });
+      html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Targets</h2><span class="panel-sub">' +
+        (m === "overall" ? "Overall race" : m === "majors" ? "Majors + Players" : "Segment " + m.slice(3)) + "</span></div>";
+      if (m === "overall") {
+        const a10 = analyze(NEED, m, me, 10), a3 = analyze(NEED, m, me, 3), a1 = analyze(NEED, m, me, 1);
+        html += targetCard("Top 10", a10, me, "", quipFor(a10));
+        html += targetCard("Top 3 (season prizes)", a3, me, "", quipFor(a3));
+        html += targetCard("Win the season", a1, me, "", quipFor(a1));
+      } else {
+        const a = analyze(NEED, m, me, 1);
+        const where = NEED.remCount[m] > 0 && !a.notStarted ? NEED.remCount[m] + " event" + (NEED.remCount[m] === 1 ? "" : "s") + " left in this race." : "";
+        html += targetCard(m === "majors" ? "Win the Majors + Players prize" : "Win Segment " + m.slice(3), a, me, where, quipFor(a));
       }
       html += "</div>";
 
-      // ---- targets ----
-      html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Targets</h2><span class="panel-sub">Overall race</span></div>';
-      html += targetCard("Top 10", a10, me);
-      html += targetCard("Top 3 (season prizes)", a3, me);
-      if (a1.inside || !a1.eliminated) html += targetCard("Win the season", a1, me);
-      html += "</div>";
-
-      // ---- majors + the segment currently being played ----
-      const races = [];
-      if (SEASON_SCHEDULE.some((e) => e.is_major)) races.push(["Majors + Players", "majors"]);
-      const seg = ["seg1", "seg2", "seg3"].find((k) => NEED.remCount[k] > 0);
-      if (seg) races.push(["Segment " + seg.slice(3), seg]);
-      if (races.length) {
-        html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>Other races</h2><span class="panel-sub">Win the category</span></div>';
-        races.forEach(([title, key]) => {
-          const a = analyze(NEED, key, me, 1);
-          const where = NEED.remCount[key] > 0 && !a.notStarted ? NEED.remCount[key] + " event" + (NEED.remCount[key] === 1 ? "" : "s") + " left in this race." : "";
-          html += targetCard(title, a, me, where);
-        });
-        html += "</div>";
-      }
-
-      // ---- what the remaining events are worth ----
-      if (NEED.remaining.length) {
+      // ---- what the remaining events in this race are worth ----
+      const remaining = NEED.remaining.filter((ev) => needCounts(m, ev));
+      if (remaining.length) {
         const T = POINT_TABLES, at = (ev, n) => (T[ev.point_type] && T[ev.point_type][n] != null ? T[ev.point_type][n] : "&ndash;");
         let rows = "";
-        NEED.remaining.forEach((ev) => {
+        remaining.forEach((ev) => {
           const pl = typeof ev.point_type === "string" && ev.point_type.startsWith("playoff");
           rows += "<tr><td>" + esc(ev.name) + (ev.is_major ? " <span class=\"g-st\">Major</span>" : "") + "</td><td>" +
             '<span class="tag ' + (pl ? "pp" : "p" + ev.point_type) + '">' + (pl ? "Playoff" : esc(ev.point_type) + " pts") + "</span></td><td>" +
             at(ev, 1) + "</td><td>" + at(ev, 5) + "</td><td>" + at(ev, 10) + "</td></tr>";
         });
-        html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>What the remaining events pay</h2><span class="panel-sub">Points by finish</span></div>' +
+        html += '<div class="panel" style="margin-top:16px"><div class="panel-head"><h2>What the remaining events pay</h2><span class="panel-sub">' +
+          (m === "overall" ? "Points by finish" : RACE_TABS.find((t) => t[0] === m)[1] + " events") + "</span></div>" +
           '<div class="table-scroll"><table class="mini"><tr><th>Event</th><th>Type</th><th>1st</th><th>5th</th><th>10th</th></tr>' + rows + "</table></div></div>";
       }
       body.innerHTML = html;
+
+      body.querySelectorAll(".need-tab").forEach((btn) => btn.addEventListener("click", () => {
+        needRace = btn.dataset.race;
+        try { history.replaceState(null, "", "#/need/" + encodeURIComponent(me.handle) + (needRace === "overall" ? "" : "/" + needRace)); } catch (e) { /* ignore */ }
+        renderNeed(me.handle);
+      }));
     }
 
     function setupNeedPicker() {
@@ -3171,12 +3324,13 @@
       sel.addEventListener("change", () => {
         const h = sel.value;
         if (h) setMe(h, true);                      // choosing yourself here makes you "me" everywhere
-        try { history.replaceState(null, "", h ? "#/need/" + encodeURIComponent(h) : "#/need"); } catch (e) { /* ignore */ }
+        try { history.replaceState(null, "", h ? "#/need/" + encodeURIComponent(h) + (needRace === "overall" ? "" : "/" + needRace) : "#/need"); } catch (e) { /* ignore */ }
         renderNeed(h);
       });
     }
 
-    function showNeed(handle) {
+    function showNeed(handle, race) {
+      if (race && isRaceKey(race)) needRace = race;
       const sel = document.getElementById("needPick");
       if (!handle) { try { handle = localStorage.getItem(NEED_KEY) || ""; } catch (e) { handle = ""; } }
       const ok = handle && NEED.rows.some((r) => r.handle.toLowerCase() === handle.toLowerCase());
@@ -3195,7 +3349,6 @@
       meAutoOpened = false;
       try { if (ME) localStorage.setItem(ME_KEY, ME); else localStorage.removeItem(ME_KEY); } catch (e) { /* private mode: fine */ }
       renderMeChip();
-      renderMeBanner();
       renderBoard();
       renderWeek();
       if (!fromNeedTab) {
@@ -3210,52 +3363,6 @@
       chip.classList.toggle("set", !!p);
       document.getElementById("meLabel").textContent = p ? firstName(p.name) : "Pick your name";
       chip.title = p ? "You are " + p.name + " — tap to change" : "Pick your name to see your own rank and lineup";
-    }
-
-    function renderMeBanner() {
-      const el = document.getElementById("meBanner");
-      const p = meRow();
-      if (!p) {
-        el.innerHTML = '<div class="me-prompt"><span>New here? Pick your name to see your own rank, what changed for you, and your lineup.</span>' +
-          '<button type="button" id="mePrompt">Pick your name</button></div>';
-        document.getElementById("mePrompt").addEventListener("click", (ev) => { ev.stopPropagation(); openMePicker(); });
-        return;
-      }
-      const m = buildMe(STANDINGS, NEED.rows, SEASON_SCHEDULE, ME);
-      if (!m) { el.innerHTML = ""; return; }
-      const names = (a) => a.length === 1 ? esc(a[0]) : a.length === 2 ? esc(a[0]) + " &amp; " + esc(a[1]) : a.length + " players";
-      const delta = m.rankDelta == null ? "" : m.rankDelta > 0 ? '<span class="me-delta up">&#9650;' + m.rankDelta + "</span>"
-        : m.rankDelta < 0 ? '<span class="me-delta down">&#9660;' + (-m.rankDelta) + "</span>" : '<span class="me-delta" style="color:var(--ink-faint);font-weight:500">no change</span>';
-      const tiles = [];
-      if (m.last) {
-        tiles.push(["Last event &middot; " + esc(m.last.name), m.last.played && m.last.place ? ord(m.last.place) + " &middot; " + fmtPts(m.last.points) + " pts" : "Didn&rsquo;t play"]);
-      }
-      tiles.push(["Next place up", m.up ? names(m.up.names) + " <small>" + fmtPts(m.up.gap) + " pts ahead</small>" : "You&rsquo;re on top"]);
-      if (m.top10) {
-        tiles.push(["Top 10", m.top10.inside
-          ? "You&rsquo;re in" + (m.top10.margin != null ? " <small>" + (m.top10.margin > 0 ? fmtPts(m.top10.margin) + " pts clear" : "level with 11th") + "</small>" : "")
-          : fmtPts(m.top10.gap) + " pts to get in"]);
-      }
-      tiles.push(["Behind the leader", m.leader.isMe ? "You lead" : fmtPts(m.leader.gap) + " pts"]);
-
-      const d = liveData;
-      const inLive = !!(d && d.locked && d.entrants && d.entrants.some((e) => isMeHandle(e.dk_handle)));
-      const pr = projection ? projection.rows.find((r) => r.handle === ME) : null;
-      let live = "";
-      if (pr && d) {
-        const gain = pr.week.overall, mv = pr.delta.overall;
-        live = '<div class="me-live"><span class="dot"></span><b>Right now</b> &middot; ' + esc(d.event) + ": " +
-          (gain > 0 ? "<b>+" + fmtPts(gain) + " pts</b> would put you <b>" + ord(pr.rank.overall) + "</b>" + (mv ? " (" + (mv > 0 ? "&#9650;" : "&#9660;") + Math.abs(mv) + ")" : "") : "no points yet this week") +
-          ' &middot; <a href="#/live">see projected standings</a></div>';
-      } else if (d && d.locked && d.entrants && d.entrants.length && !inLive) {
-        live = '<div class="meta-line" style="margin-top:12px">You don&rsquo;t have a lineup in ' + esc(d.event) + ".</div>";
-      }
-      el.innerHTML = '<div class="me-card"><div class="me-hi">Hi, ' + esc(firstName(m.name)) + "</div>" +
-        '<div class="me-big">' + ord(m.rank) + (m.tiedWith ? " (tied)" : "") + " <small>overall &middot; " + fmtPts(m.points) + " pts</small>" + delta + "</div>" +
-        '<div class="me-grid">' + tiles.map((t) => '<div><div class="k">' + t[0] + '</div><div class="v">' + t[1] + "</div></div>").join("") + "</div>" + live +
-        '<div class="me-links"><a href="#/need/' + encodeURIComponent(p.dk_handle) + '">What I need &rarr;</a>' +
-        '<a href="#/player/' + encodeURIComponent(p.dk_handle) + '">My season &rarr;</a>' +
-        (inLive ? '<a href="#/week">My lineup this week &rarr;</a>' : "") + "</div></div>";
     }
 
     function setupMe() {
@@ -3281,7 +3388,6 @@
       document.addEventListener("click", (ev) => { if (!pop.hidden && !pop.contains(ev.target) && ev.target !== chip) close(); });
       document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !pop.hidden) { close(); chip.focus(); } });
       renderMeChip();
-      renderMeBanner();
     }
 
     // Who had who, for a finished week (lineups of past events are public by definition).
