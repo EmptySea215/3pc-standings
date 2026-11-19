@@ -4,7 +4,7 @@
  "espn_event_id": "401850981",
  "espn_dates": "20261119-20261122",
  "locked_at": "2026-11-19T08:30:00-05:00",
- "event_key": null,
+ "event_key": "test",
  "point_type": "600",
  "segment": 1,
  "is_major": false,
