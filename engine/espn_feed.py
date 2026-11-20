@@ -200,6 +200,37 @@ def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> d
     }
 
 
+LEADERBOARD_URL = "https://site.web.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event={event_id}"
+
+
+def parse_tee_times(data: dict) -> dict[str, dict]:
+    """{golfer name: {"time": "2026-11-20T14:14Z", "hole": 10, "round": 2}} for every golfer ESPN lists as scheduled
+    ("pre") for a round that has not teed off. Anything malformed is skipped, never guessed."""
+    out: dict[str, dict] = {}
+    for ev in data.get("events", [])[:1]:
+        for comp in ev.get("competitions", [])[:1]:
+            for c in comp.get("competitors", []):
+                st = c.get("status") or {}
+                name = (c.get("athlete") or {}).get("displayName")
+                tee, rnd = st.get("teeTime"), st.get("period")
+                if not name or not tee or not isinstance(rnd, int):
+                    continue
+                if (st.get("type") or {}).get("state") != "pre":
+                    continue                    # already on the course, finished, or withdrawn
+                hole = st.get("startHole")
+                out[name] = {"time": tee, "hole": hole if isinstance(hole, int) else None, "round": rnd}
+    return out
+
+
+def fetch_tee_times(event_id: str, timeout: int = 15) -> dict[str, dict]:
+    """Tee times are a nicety on top of scoring: any failure returns {} so scoring and publishing carry on without them."""
+    try:
+        req = urllib.request.Request(LEADERBOARD_URL.format(event_id=event_id), headers={"User-Agent": "Mozilla/5.0"})
+        return parse_tee_times(json.load(urllib.request.urlopen(req, timeout=timeout)))
+    except Exception:
+        return {}
+
+
 def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
     """Tied-place for every golfer who completed 4 rounds.
 

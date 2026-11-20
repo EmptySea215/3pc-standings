@@ -22,8 +22,52 @@ import os
 import sys
 import tempfile
 
-from engine.espn_feed import event_points, fetch_event, load_aliases, name_matches, norm
+from engine.espn_feed import event_points, fetch_event, fetch_tee_times, load_aliases, name_matches, norm
 from engine.lineups import parse_lineup
+
+#: a tee time this far in the past with the golfer still not started is stale (a no-show or a withdrawal), not "upcoming"
+TEE_STALE_AFTER = dt.timedelta(hours=6)
+
+
+def _parse_tee(iso) -> dt.datetime | None:
+    """ESPN writes tee times as UTC, e.g. "2026-11-20T14:14Z". None for anything unreadable."""
+    try:
+        t = dt.datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return t if t.tzinfo else None
+
+
+def upcoming_tee(entry: dict | None, g, now: dt.datetime) -> dict | None:
+    """The tee time to show beside a golfer: only for a round he has not started and that is not long past.
+
+    entry is one value of espn_feed.parse_tee_times (None if ESPN lists no scheduled round); g is his GolferResult.
+    Returns {"tee", "tee_hole", "tee_round"} or None."""
+    if not entry or g is None or g.partial or entry["round"] <= g.rounds_complete:
+        return None
+    t = _parse_tee(entry["time"])
+    if t is None or t < now - TEE_STALE_AFTER:
+        return None
+    return {"tee": entry["time"], "tee_hole": entry.get("hole"), "tee_round": entry["round"]}
+
+
+def next_round_start(result: dict, now: dt.datetime) -> dict:
+    """When the next round begins, for the header text "Round 1 Final · Round 2 starts 8:30 AM".
+
+    Only between rounds (ESPN's "Play Complete" with the tournament still on): the earliest scheduled tee time of a
+    later round across the whole field. Empty once anybody is on the course, so it can never contradict live play."""
+    if not result.get("round_complete") or result.get("final") or any(g.partial for g in result["golfers"]):
+        return {}
+    period = result.get("period") or 0
+    cands = []
+    for e in (result.get("tee_times") or {}).values():
+        t = _parse_tee(e["time"])
+        if t is not None and e["round"] > period and t >= now - TEE_STALE_AFTER:
+            cands.append((t, e["time"], e["round"]))
+    if not cands:
+        return {}
+    _, raw, rnd = min(cands)
+    return {"next_tee": raw, "next_tee_round": rnd}
 
 
 def two_round_to_par(g) -> int | None:
@@ -74,7 +118,7 @@ def golfer_status(g, period: int | None, final: bool, cut_line: int | None = Non
     return "done" if g.rounds_complete >= p else "yet"
 
 
-def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = None) -> dict:
+def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = None, now: dt.datetime | None = None) -> dict:
     """entrants: [{"name","dk_handle","golfers":[6 names]}] -> scored + ranked.
 
     A golfer not found in the feed scores 0 and is listed in `unmatched` (this
@@ -86,6 +130,8 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
     feed = {norm(n): n for n in pts}
     objs = {g.name: g for g in result["golfers"]}
     cut_line = find_cut_line(result["golfers"])
+    now = now or dt.datetime.now(dt.timezone.utc)
+    tee_by_norm = {norm(n): v for n, v in (result.get("tee_times") or {}).items()}
 
     scored, unranked, unmatched = [], [], []
     golfer_fpts: dict[str, float] = {}
@@ -107,7 +153,10 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
             # DraftKings exports turn accented letters into '?' ("Sami V?lim?ki"); when the golfer was matched to the
             # feed, show the feed's correctly spelled name instead. Scoring above still uses the DK spelling as given.
             shown = feed[key] if key is not None and "?" in g else g
-            detail.append({"golfer": shown, "points": p, "status": st})
+            item = {"golfer": shown, "points": p, "status": st}
+            if key is not None and not result["final"] and st not in ("cut", "out"):
+                item.update(upcoming_tee(tee_by_norm.get(key), objs.get(feed[key]), now) or {})
+            detail.append(item)
             total += p
         scored.append({"name": e["name"], "dk_handle": e.get("dk_handle"),
                        "points": total, "golfers": detail,
@@ -124,8 +173,10 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
 META_KEYS = ("event_key", "point_type", "segment", "is_major")
 
 
-def build_status(result: dict, entrants: list[dict], week_key: str | None = None, meta: dict | None = None) -> dict:
-    scored = score_entrants(result, entrants)
+def build_status(result: dict, entrants: list[dict], week_key: str | None = None, meta: dict | None = None,
+                 now: dt.datetime | None = None) -> dict:
+    now = now or dt.datetime.now(dt.timezone.utc)
+    scored = score_entrants(result, entrants, now=now)
     return {
         **{k: (meta or {}).get(k) for k in META_KEYS},
         "week_key": week_key,
@@ -138,11 +189,14 @@ def build_status(result: dict, entrants: list[dict], week_key: str | None = None
         "detail": result.get("detail"),
         "updated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "field_size": len(result["golfers"]),
+        "next_tee": None, "next_tee_round": None,       # filled between rounds only (see next_round_start)
+        **next_round_start(result, now),
         **scored,
     }
 
 
 PUBLIC_FIELDS = ("week_key", "event", "event_id", "state", "final", "round_complete", "round_in_progress",
+                 "next_tee", "next_tee_round",
                  "detail", "updated_at", "field_size", "event_key", "point_type", "segment", "is_major")
 
 
@@ -230,6 +284,8 @@ def main(argv=None) -> int:
                 atomic_write_json(a.public_out, public_view(waiting, cfg.get("locked_at")))
             print("not started")
             return 0
+        if not result["final"]:
+            result["tee_times"] = fetch_tee_times(result["event_id"])      # soft-fails to {}: tee times are optional
         status = build_status(result, entrants, cfg.get("week_key"), {k: cfg.get(k) for k in META_KEYS})
         errs = [f"{g.name}: {e}" for g in result["golfers"] for e in g.parse_errors]
         if errs:
@@ -240,7 +296,7 @@ def main(argv=None) -> int:
         top =status["entrants"][0] if status["entrants"] else None
         log(a.log, f"{result['name']} state={result['state']} round={result.get('period')} "
                    f"golfers={len(result['golfers'])} entrants={len(status['entrants'])} "
-                   f"unmatched={len(status['unmatched'])} parse_errors={len(errs)}"
+                   f"unmatched={len(status['unmatched'])} parse_errors={len(errs)} tee_times={len(result.get('tee_times') or {})}"
                    + (f" leader={top['name']} {top['points']}" if top else ""))
         print(f"ok: {result['name']} ({result['state']}), {len(status['entrants'])} entrants scored")
         return 0
