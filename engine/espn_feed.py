@@ -116,26 +116,11 @@ class GolferResult:
     playoff: dict | None = None                           # playoff holes (never scored by DK)
     to_par: int | None = None
     order: int | None = None
-    current_hole: int | None = None                       # the hole he is on now (partial round only); see _next_hole
     parse_errors: list[str] = field(default_factory=list)  # loud, not silent
 
     @property
     def rounds_complete(self) -> int:
         return len(self.rounds)
-
-
-def _next_hole(played: list) -> int | None:
-    """The hole a golfer is on now: the one after the last hole he has finished, wrapping 18 -> 1 (a 10th-tee start
-    plays 10..18, then 1..9). Works from the hole numbers themselves, not the order the feed lists them in. None
-    whenever it is unclear (no holes, a full round, a gap in the holes, anything that is not a hole number 1-18)."""
-    try:
-        done = {int(h) for h in played}
-    except (TypeError, ValueError):
-        return None
-    if not done or len(done) >= 18 or any(not 1 <= h <= 18 for h in done):
-        return None
-    last = [h for h in done if (h % 18 + 1) not in done]
-    return last[0] % 18 + 1 if len(last) == 1 else None
 
 
 def parse_competitor(c: dict) -> GolferResult:
@@ -161,11 +146,10 @@ def parse_competitor(c: dict) -> GolferResult:
             g.playoff = {"scores": scores, "pars": pars}
         else:
             g.partial = {"scores": scores, "pars": pars}
-            g.current_hole = _next_hole([h.get("period") for h in holes])
     # A 5th "round" of <18 holes after 4 complete rounds is a playoff even if
     # the feed numbers it oddly; never score it.
     if g.rounds_complete >= 4 and g.partial:
-        g.playoff, g.partial, g.current_hole = g.partial, None, None
+        g.playoff, g.partial = g.partial, None
     return g
 
 
