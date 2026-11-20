@@ -22,8 +22,8 @@ import os
 import sys
 import tempfile
 
-from engine.espn_feed import (event_places, event_points, fetch_event, fetch_tee_times, find_cut_line, is_cut, load_aliases,
-                              name_matches, norm, two_round_to_par)  # noqa: F401  (cut-line helpers re-exported)
+from engine.espn_feed import (confirmed_cuts, event_places, event_points, fetch_event, fetch_leaderboard_extras, find_cut_line,
+                              is_cut, load_aliases, name_matches, norm, two_round_to_par)  # noqa: F401  (cut-line helpers re-exported)
 from engine.lineups import parse_lineup
 
 #: a tee time this far in the past with the golfer still not started is stale (a no-show or a withdrawal), not "upcoming"
@@ -71,15 +71,16 @@ def next_round_start(result: dict, now: dt.datetime) -> dict:
     return {"next_tee": raw, "next_tee_round": rnd}
 
 
-def golfer_status(g, period: int | None, final: bool, cut_line: int | None = None) -> str:
+def golfer_status(g, period: int | None, final: bool, cut_line: int | None = None, cut_names: set[str] | None = None) -> str:
     """Short human status for the live panel: done | playing | yet | cut | out.
 
     done    - finished the round in progress (or the whole event is final)
     playing - mid-round
     yet     - hasn't teed off in the current round
-    cut     - missed the cut / withdrew. Never just because a round ended: the cut is made after Round 2, and
-              before anyone has teed off in Round 3 (cut_line is None) nobody is called cut; after that a golfer with
-              2 rounds is cut only if his 2-round score is worse than the line, otherwise he is just "yet" to tee off
+    cut     - missed the cut / withdrew. Never just because a round ended: the cut is made after Round 2. Once ESPN
+              flags the missed cuts (cut_names) those golfers are cut right away; without the flag, before anyone has
+              teed off in Round 3 (cut_line is None) nobody is called cut, and after that a golfer with 2 rounds is cut
+              only if his 2-round score is worse than the line, otherwise he is just "yet" to tee off
     out     - not in the tournament field at all (withdrew before teeing off, or never entered): scores 0 in DraftKings
               and will never play, so he is not counted in "left"
     Only the live test on a real event can confirm these thresholds; they are
@@ -92,10 +93,10 @@ def golfer_status(g, period: int | None, final: bool, cut_line: int | None = Non
     p = period or 1
     if g.partial:
         return "playing"
+    if is_cut(g, p, cut_line, cut_names):
+        return "cut"                # withdrew, or missed the cut (ESPN's flag, else the line inferred from Round 3 tee-offs)
     if p >= 3 and g.rounds_complete <= 2:
-        if is_cut(g, p, cut_line):
-            return "cut"            # withdrew, or missed the cut (judged against the line inferred from Round 3 tee-offs)
-        return "done" if cut_line is None else "yet"   # line unknown: nobody is called cut; made the cut: waiting to tee off
+        return "yet" if (cut_line is not None or cut_names) else "done"   # made the cut and waiting to tee off; cut unknown: "done"
     return "done" if g.rounds_complete >= p else "yet"
 
 
@@ -115,6 +116,7 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
     feed = {norm(n): n for n in pts}
     objs = {g.name: g for g in result["golfers"]}
     cut_line = find_cut_line(result["golfers"])
+    cut_names = result.get("cut_names")
     now = now or dt.datetime.now(dt.timezone.utc)
     tee_by_norm = {norm(n): v for n, v in (result.get("tee_times") or {}).items()}
 
@@ -133,7 +135,7 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
                 p, st = 0.0, golfer_status(None, result.get("period"), result["final"])
             else:
                 p = pts[feed[key]]
-                st = golfer_status(objs.get(feed[key]), result.get("period"), result["final"], cut_line)
+                st = golfer_status(objs.get(feed[key]), result.get("period"), result["final"], cut_line, cut_names)
             golfer_fpts[g] = p
             # DraftKings exports turn accented letters into '?' ("Sami V?lim?ki"); when the golfer was matched to the
             # feed, show the feed's correctly spelled name instead. Scoring above still uses the DK spelling as given.
@@ -278,7 +280,9 @@ def main(argv=None) -> int:
             print("not started")
             return 0
         if not result["final"]:
-            result["tee_times"] = fetch_tee_times(result["event_id"])      # soft-fails to {}: tee times are optional
+            tee_times, flagged = fetch_leaderboard_extras(result["event_id"])     # soft-fails to ({}, set()): both optional
+            result["tee_times"] = tee_times
+            result["cut_names"] = confirmed_cuts(result, flagged)
         status = build_status(result, entrants, cfg.get("week_key"), {k: cfg.get(k) for k in META_KEYS})
         errs = [f"{g.name}: {e}" for g in result["golfers"] for e in g.parse_errors]
         if errs:
@@ -289,7 +293,7 @@ def main(argv=None) -> int:
         top =status["entrants"][0] if status["entrants"] else None
         log(a.log, f"{result['name']} state={result['state']} round={result.get('period')} "
                    f"golfers={len(result['golfers'])} entrants={len(status['entrants'])} "
-                   f"unmatched={len(status['unmatched'])} parse_errors={len(errs)} tee_times={len(result.get('tee_times') or {})}"
+                   f"unmatched={len(status['unmatched'])} parse_errors={len(errs)} tee_times={len(result.get('tee_times') or {})} cut_flags={len(result.get('cut_names') or ())}"
                    + (f" leader={top['name']} {top['points']}" if top else ""))
         print(f"ok: {result['name']} ({result['state']}), {len(status['entrants'])} entrants scored")
         return 0

@@ -222,13 +222,37 @@ def parse_tee_times(data: dict) -> dict[str, dict]:
     return out
 
 
-def fetch_tee_times(event_id: str, timeout: int = 15) -> dict[str, dict]:
-    """Tee times are a nicety on top of scoring: any failure returns {} so scoring and publishing carry on without them."""
+def parse_cut_names(data: dict) -> set[str]:
+    """Normalized names of the golfers ESPN's leaderboard marks "Missed Cut" (status type STATUS_CUT).
+
+    ESPN sets the flag for the whole field as soon as the cut is made (the moment Round 2 is complete), and a golfer who
+    withdrew carries it too. Anything malformed is skipped, never guessed."""
+    out: set[str] = set()
+    for ev in data.get("events", [])[:1]:
+        for comp in ev.get("competitions", [])[:1]:
+            for c in comp.get("competitors", []):
+                name = (c.get("athlete") or {}).get("displayName")
+                if name and ((c.get("status") or {}).get("type") or {}).get("name") == "STATUS_CUT":
+                    out.add(norm(name))
+    return out
+
+
+def fetch_leaderboard_extras(event_id: str, timeout: int = 15) -> tuple[dict[str, dict], set[str]]:
+    """(tee times, missed-cut names) from one read of ESPN's leaderboard. Both are a nicety on top of scoring: any
+    failure returns ({}, set()) so scoring and publishing carry on without them."""
     try:
         req = urllib.request.Request(LEADERBOARD_URL.format(event_id=event_id), headers={"User-Agent": "Mozilla/5.0"})
-        return parse_tee_times(json.load(urllib.request.urlopen(req, timeout=timeout)))
+        data = json.load(urllib.request.urlopen(req, timeout=timeout))
+        return parse_tee_times(data), parse_cut_names(data)
     except Exception:
-        return {}
+        return {}, set()
+
+
+def confirmed_cuts(result: dict, flagged: set[str]) -> set[str]:
+    """ESPN's missed-cut flags, trusted only once the cut can exist: Round 2 is complete, or a later round is under way.
+    Before that the set is empty, so nobody is called cut early."""
+    p = result.get("period") or 0
+    return set(flagged) if flagged and (p >= 3 or (p == 2 and result.get("round_complete"))) else set()
 
 
 def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
@@ -284,10 +308,15 @@ def find_cut_line(golfers: list[GolferResult]) -> int | None:
     return max(totals) if totals else None
 
 
-def is_cut(g: GolferResult, period: int | None, cut_line: int | None) -> bool:
-    """True for a golfer with fewer than 3 rounds once Round 3 is under way who is not going to play on: he withdrew,
-    or his 2-round score is worse than the cut line. With the line still unknown (nobody has teed off in Round 3) nobody
-    is cut, and a golfer who has made the cut but not yet teed off is NOT cut however late his tee time."""
+def is_cut(g: GolferResult, period: int | None, cut_line: int | None, cut_names: set[str] | None = None) -> bool:
+    """True for a golfer with fewer than 3 rounds who is not going to play on: he withdrew, or missed the cut.
+
+    ESPN's own "Missed Cut" flag (cut_names, see confirmed_cuts) decides it the moment the cut is made. Without the flag
+    it is inferred once Round 3 is under way: his 2-round score is worse than the cut line. With the line still unknown
+    (nobody has teed off in Round 3) nobody is cut, and a golfer who has made the cut but not yet teed off is NOT cut
+    however late his tee time."""
+    if cut_names and norm(g.name) in cut_names and g.rounds_complete <= 2 and not g.partial:
+        return True
     p = period or 1
     if p < 3 or g.rounds_complete > 2 or g.partial:
         return False
@@ -296,7 +325,8 @@ def is_cut(g: GolferResult, period: int | None, cut_line: int | None) -> bool:
     return cut_line is not None and two_round_to_par(g) > cut_line
 
 
-def live_places(golfers: list[GolferResult], period: int | None, cut_line: int | None = None) -> dict[str, int]:
+def live_places(golfers: list[GolferResult], period: int | None, cut_line: int | None = None,
+                cut_names: set[str] | None = None) -> dict[str, int]:
     """Current leaderboard place for every golfer in the running, mid-event.
 
     DraftKings pays the placement bonus LIVE, on a golfer's current position (confirmed in the first live test:
@@ -307,7 +337,7 @@ def live_places(golfers: list[GolferResult], period: int | None, cut_line: int |
     off last, so dropping them would hand everyone ahead of the field a false first place).
     """
     running = [g for g in golfers if g.to_par is not None and (g.rounds_complete > 0 or g.partial)
-               and not is_cut(g, period, cut_line)]
+               and not is_cut(g, period, cut_line, cut_names)]
     return {g.name: 1 + sum(1 for o in running if o.to_par < g.to_par) for g in running}
 
 
@@ -332,7 +362,7 @@ def event_places(result: dict) -> dict[str, int]:
     The site shows these same places beside each golfer, so the number you see is the one the points are built on."""
     if result["final"]:
         return assign_places(result["golfers"])
-    return live_places(result["golfers"], result.get("period"), find_cut_line(result["golfers"]))
+    return live_places(result["golfers"], result.get("period"), find_cut_line(result["golfers"]), result.get("cut_names"))
 
 
 def event_points(result: dict) -> dict[str, float]:
