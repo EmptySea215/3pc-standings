@@ -266,16 +266,48 @@ def partial_round_points(scores: list[int], pars: list[int]) -> float:
     return pts
 
 
-def live_places(golfers: list[GolferResult], period: int | None) -> dict[str, int]:
+def two_round_to_par(g: GolferResult) -> int | None:
+    """Score to par after rounds 1 and 2 (what the cut is decided on); None until two rounds are complete."""
+    if g.rounds_complete < 2:
+        return None
+    return sum(sum(r["scores"]) - sum(r["pars"]) for r in g.rounds[:2])
+
+
+def find_cut_line(golfers: list[GolferResult]) -> int | None:
+    """The cut score (to par after 36 holes), worked out from who has teed off in Round 3: ESPN's feed has no cut flag.
+
+    Round 3 tees off worst score first, so the golfers already out on the course are the ones at the cut line, and the
+    worst 2-round total among them is the line (everyone tied at the line makes the cut). None until somebody has
+    started Round 3, so nobody is called "cut" before it is known."""
+    totals = [two_round_to_par(g) for g in golfers if g.rounds_complete >= 3 or (g.rounds_complete == 2 and g.partial)]
+    totals = [t for t in totals if t is not None]
+    return max(totals) if totals else None
+
+
+def is_cut(g: GolferResult, period: int | None, cut_line: int | None) -> bool:
+    """True for a golfer with fewer than 3 rounds once Round 3 is under way who is not going to play on: he withdrew,
+    or his 2-round score is worse than the cut line. With the line still unknown (nobody has teed off in Round 3) nobody
+    is cut, and a golfer who has made the cut but not yet teed off is NOT cut however late his tee time."""
+    p = period or 1
+    if p < 3 or g.rounds_complete > 2 or g.partial:
+        return False
+    if g.rounds_complete < 2 or p >= 4:
+        return True               # cannot be waiting for a tee time: withdrew, or missed the cut (Round 3 is over)
+    return cut_line is not None and two_round_to_par(g) > cut_line
+
+
+def live_places(golfers: list[GolferResult], period: int | None, cut_line: int | None = None) -> dict[str, int]:
     """Current leaderboard place for every golfer in the running, mid-event.
 
     DraftKings pays the placement bonus LIVE, on a golfer's current position (confirmed in the first live test:
     Max Greyserman leading at -4 showed 17.5 hole points + 30 for 1st = 47.5). Same tie rule as the final scoring:
     place = 1 + the number of golfers with a strictly better score-to-par, and everyone tied shares that place.
-    Golfers who haven't teed off yet, and golfers who have missed the cut (round 3+), are not in the running.
+    Golfers who haven't teed off in Round 1, and golfers who have missed the cut or withdrawn (see is_cut), are not in
+    the running. A golfer who made the cut but has not yet teed off in Round 3 still holds his place (the leaders tee
+    off last, so dropping them would hand everyone ahead of the field a false first place).
     """
     running = [g for g in golfers if g.to_par is not None and (g.rounds_complete > 0 or g.partial)
-               and not (period is not None and period >= 3 and g.rounds_complete <= 2 and not g.partial)]
+               and not is_cut(g, period, cut_line)]
     return {g.name: 1 + sum(1 for o in running if o.to_par < g.to_par) for g in running}
 
 
@@ -295,13 +327,18 @@ def golfer_points(g: GolferResult, place: int | None, final: bool) -> float:
     return pts
 
 
+def event_places(result: dict) -> dict[str, int]:
+    """{golfer_name: place} the scoring uses: final tied places once the event is over, live places until then.
+    The site shows these same places beside each golfer, so the number you see is the one the points are built on."""
+    if result["final"]:
+        return assign_places(result["golfers"])
+    return live_places(result["golfers"], result.get("period"), find_cut_line(result["golfers"]))
+
+
 def event_points(result: dict) -> dict[str, float]:
     """{golfer_name: DK points} for everyone in the feed.
 
     Final events use the final tied places; events in progress use live places (see live_places), because
     that's what DraftKings shows on its leaderboard and what the 3PC projection should mirror."""
-    if result["final"]:
-        places = assign_places(result["golfers"])
-    else:
-        places = live_places(result["golfers"], result.get("period"))
+    places = event_places(result)
     return {g.name: golfer_points(g, places.get(g.name), result["final"]) for g in result["golfers"]}

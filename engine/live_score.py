@@ -22,7 +22,8 @@ import os
 import sys
 import tempfile
 
-from engine.espn_feed import event_points, fetch_event, fetch_tee_times, load_aliases, name_matches, norm
+from engine.espn_feed import (event_places, event_points, fetch_event, fetch_tee_times, find_cut_line, is_cut, load_aliases,
+                              name_matches, norm, two_round_to_par)  # noqa: F401  (cut-line helpers re-exported)
 from engine.lineups import parse_lineup
 
 #: a tee time this far in the past with the golfer still not started is stale (a no-show or a withdrawal), not "upcoming"
@@ -70,24 +71,6 @@ def next_round_start(result: dict, now: dt.datetime) -> dict:
     return {"next_tee": raw, "next_tee_round": rnd}
 
 
-def two_round_to_par(g) -> int | None:
-    """Score to par after rounds 1 and 2 (what the cut is decided on); None until two rounds are complete."""
-    if g.rounds_complete < 2:
-        return None
-    return sum(sum(r["scores"]) - sum(r["pars"]) for r in g.rounds[:2])
-
-
-def find_cut_line(golfers) -> int | None:
-    """The cut score (to par after 36 holes), worked out from who has teed off in Round 3: ESPN's feed has no cut flag.
-
-    Round 3 tees off worst score first, so the golfers already out on the course are the ones at the cut line, and the
-    worst 2-round total among them is the line (everyone tied at the line makes the cut). None until somebody has
-    started Round 3, so nobody is called "cut" before it is known."""
-    totals = [two_round_to_par(g) for g in golfers if g.rounds_complete >= 3 or (g.rounds_complete == 2 and g.partial)]
-    totals = [t for t in totals if t is not None]
-    return max(totals) if totals else None
-
-
 def golfer_status(g, period: int | None, final: bool, cut_line: int | None = None) -> str:
     """Short human status for the live panel: done | playing | yet | cut | out.
 
@@ -110,11 +93,9 @@ def golfer_status(g, period: int | None, final: bool, cut_line: int | None = Non
     if g.partial:
         return "playing"
     if p >= 3 and g.rounds_complete <= 2:
-        if g.rounds_complete < 2 or p >= 4:
-            return "cut"            # cannot be waiting for a tee time: withdrew, or missed the cut (Round 3 is over)
-        if cut_line is None:
-            return "done"           # Round 3 has not teed off yet: the cut line is not known, so nobody is called cut
-        return "cut" if two_round_to_par(g) > cut_line else "yet"
+        if is_cut(g, p, cut_line):
+            return "cut"            # withdrew, or missed the cut (judged against the line inferred from Round 3 tee-offs)
+        return "done" if cut_line is None else "yet"   # line unknown: nobody is called cut; made the cut: waiting to tee off
     return "done" if g.rounds_complete >= p else "yet"
 
 
@@ -127,6 +108,10 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
     """
     aliases = aliases if aliases is not None else load_aliases()
     pts = event_points(result)
+    places = event_places(result)
+    place_counts: dict[int, int] = {}
+    for pl in places.values():
+        place_counts[pl] = place_counts.get(pl, 0) + 1
     feed = {norm(n): n for n in pts}
     objs = {g.name: g for g in result["golfers"]}
     cut_line = find_cut_line(result["golfers"])
@@ -154,6 +139,9 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
             # feed, show the feed's correctly spelled name instead. Scoring above still uses the DK spelling as given.
             shown = feed[key] if key is not None and "?" in g else g
             item = {"golfer": shown, "points": p, "status": st}
+            if key is not None and st not in ("cut", "out") and feed[key] in places:
+                item["place"] = places[feed[key]]                     # the place his points are built on (live or final)
+                item["tied"] = place_counts[item["place"]] > 1
             if key is not None and not result["final"] and st not in ("cut", "out"):
                 item.update(upcoming_tee(tee_by_norm.get(key), objs.get(feed[key]), now) or {})
             detail.append(item)
