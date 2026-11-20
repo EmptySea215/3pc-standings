@@ -143,6 +143,8 @@ def score_entrants(result: dict, entrants: list[dict], aliases: dict | None = No
                 item["place"] = places[feed[key]]                     # the place his points are built on (live or final)
                 item["tied"] = place_counts[item["place"]] > 1
             obj = objs.get(feed[key]) if key is not None else None
+            if st == "playing" and obj is not None and obj.current_hole and not result["final"]:
+                item["hole"] = obj.current_hole                      # "Playing - Hole 11" on the site
             if obj is not None and obj.to_par is not None and (obj.rounds_complete or obj.partial):
                 item["to_par"] = obj.to_par                          # his score so far (a cut golfer keeps his final number)
             if key is not None and not result["final"] and st not in ("cut", "out"):
