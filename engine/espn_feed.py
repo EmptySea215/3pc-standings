@@ -249,10 +249,17 @@ def fetch_leaderboard_extras(event_id: str, timeout: int = 15) -> tuple[dict[str
 
 
 def confirmed_cuts(result: dict, flagged: set[str]) -> set[str]:
-    """ESPN's missed-cut flags, trusted only once the cut can exist: Round 2 is complete, or a later round is under way.
-    Before that the set is empty, so nobody is called cut early."""
+    """ESPN's missed-cut flags, trusted only once the cut can exist: a later round is under way, or in Round 2 every golfer
+    ESPN has NOT flagged has finished it and none is mid-round. Judged from the golfers, not from ESPN's round label,
+    which reads "Suspended" instead of "Play Complete" when play is held up after Round 2. Before that the set is empty,
+    so nobody is called cut early."""
     p = result.get("period") or 0
-    return set(flagged) if flagged and (p >= 3 or (p == 2 and result.get("round_complete"))) else set()
+    if not flagged or p < 2:
+        return set()
+    if p >= 3:
+        return set(flagged)
+    unfinished = [g for g in result.get("golfers", []) if norm(g.name) not in flagged and (g.partial or g.rounds_complete < 2)]
+    return set() if unfinished else set(flagged)
 
 
 def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
