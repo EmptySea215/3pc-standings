@@ -168,6 +168,22 @@ def _is_final(ev_status: dict, comp_status: dict) -> bool:
     return comp_status.get("name") != "STATUS_PLAY_COMPLETE"
 
 
+#: ESPN's status names for play held up (suspended, or delayed by weather). Saturday of the RSM Classic read
+#: "Round 2 - Suspended" (STATUS_SUSPENDED) with nobody on the course.
+SUSPENDED_STATUSES = {"STATUS_SUSPENDED", "STATUS_DELAYED", "STATUS_RAIN_DELAY"}
+
+
+def _is_suspended(ev_status: dict, comp_status: dict) -> bool:
+    """True while play is held up in a tournament that is still going. Judged from the status name, or from the round
+    label when ESPN invents a new name ("Round 3 - Suspended"). Never true once the round or the event is complete."""
+    if comp_status.get("completed") or ev_status.get("completed"):
+        return False
+    for st in (comp_status, ev_status):
+        if st.get("name") in SUSPENDED_STATUSES:
+            return True
+    return "suspended" in str(comp_status.get("detail") or "").lower()
+
+
 def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> dict:
     """Returns {"event_id","name","final","golfers":[GolferResult]}.
 
@@ -189,6 +205,8 @@ def fetch_event(dates: str, event_id: str | None = None, timeout: int = 30) -> d
         "final": _is_final(ev_status, status),
         # the round just finished but the tournament has not ("Round 1 - Play Complete"): the page says "Round 1 Final"
         "round_complete": bool(status.get("completed")) and not _is_final(ev_status, status),
+        # play is held up (suspended / weather delay): the page shows "Play suspended" instead of "Live"
+        "play_suspended": _is_suspended(ev_status, status),
         # The EVENT's state, not the round's: between rounds the competition reads "post" but the tournament is still "in".
         "state": ev_status.get("state") or status.get("state"),   # pre | in | post
         "period": comp.get("status", {}).get("period"),     # round currently being played
