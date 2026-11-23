@@ -131,9 +131,13 @@ def parse_competitor(c: dict) -> GolferResult:
         g.to_par = None
     for r in c.get("linescores", []):
         holes = r.get("linescores", []) or []
-        if not holes:
-            continue
         period = r.get("period")
+        if not holes:
+            # The final feed can list the playoff as a 5th "round" with no holes at all (RSM Classic 2026: value 0, "-").
+            # That entry still marks the golfer as a playoff participant; ESPN's other marker entries (period 402) don't.
+            if r.get("isPlayoff") is True or (isinstance(period, int) and 5 <= period <= 9):
+                g.playoff = g.playoff or {"scores": [], "pars": []}
+            continue
         try:
             scores = [int(h["value"]) for h in holes]
             pars = [_hole_par(int(h["value"]), h["scoreType"]["displayValue"]) for h in holes]
@@ -280,24 +284,32 @@ def confirmed_cuts(result: dict, flagged: set[str]) -> set[str]:
     return set() if unfinished else set(flagged)
 
 
+def regulation_to_par(g: GolferResult) -> int:
+    """The 72-hole score to par, from the four rounds. ESPN's own total can fold playoff holes in (RSM Classic 2026: a few
+    minutes after the finish the winner's -16 became -17 with his playoff birdie), but DK ties and places on 72 holes."""
+    return sum(sum(r["scores"]) - sum(r["pars"]) for r in g.rounds[:4])
+
+
 def assign_places(golfers: list[GolferResult]) -> dict[str, int]:
     """Tied-place for every golfer who completed 4 rounds.
 
-    Ties share a place. The exception is a playoff: golfers who played extra
-    holes are separated (winner 1st, runner-up 2nd, ...) using the feed's
-    final `order`, because DK pays playoff losers 2nd, not a share of 1st.
+    Ties share a place. The exception is a playoff: the winner (first by the feed's final `order`) is 1st and every
+    other golfer who played extra holes is 2nd, because DK pays playoff losers 2nd (20), not a share of 1st. That holds
+    with more than two in the playoff: RSM Classic 2026, four tied at -16, ESPN shows the three losers as "T2" and DK paid
+    one of them the 2nd-place 20, not 3rd or 4th.
     """
     finishers = [g for g in golfers if g.rounds_complete >= 4 and g.to_par is not None]
-    places = {g.name: 1 + sum(1 for o in finishers if o.to_par < g.to_par) for g in finishers}
+    score = {g.name: regulation_to_par(g) if g.playoff else g.to_par for g in finishers}
+    places = {g.name: 1 + sum(1 for o in finishers if score[o.name] < score[g.name]) for g in finishers}
     by_score: dict[int, list[GolferResult]] = {}
     for g in finishers:
-        by_score.setdefault(g.to_par, []).append(g)
+        by_score.setdefault(score[g.name], []).append(g)
     for group in by_score.values():
         if any(g.playoff for g in group):
             base = min(places[g.name] for g in group)
             ordered = sorted(group, key=lambda g: (g.order if g.order is not None else 10**6))
             for i, g in enumerate(ordered):
-                places[g.name] = base + i
+                places[g.name] = base + min(i, 1)       # winner 1st, every playoff loser 2nd
     return places
 
 
